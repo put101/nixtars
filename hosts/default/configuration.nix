@@ -167,7 +167,7 @@
     bat
     fastfetch
     python3
-   # uv 
+    uv
     microsoft-edge
     signal-desktop
     #jetbrains.pycharm-professional
