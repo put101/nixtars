@@ -203,9 +203,13 @@
     #cudaPackages.cudatoolkit
     #cudaPackages.cudnn
     #cudaPackages.nccl
+
+    # screenshot plasma issue -> use https://wiki.nixos.org/wiki/Flameshot
+    grim
+
  ];
-  
-  
+
+
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
   # programs.mtr.enable = true;
