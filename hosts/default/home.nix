@@ -139,10 +139,6 @@
         contrastUiColor = "#270032";
         drawColor = "#ff0000";
 
-        # For Wayland (Install Grim seperately)
-        useGrimAdapter = true;
-        # Stops warnings for using Grim
-        disabledGrimWarning = true;
       };
     };
   };
