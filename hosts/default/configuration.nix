@@ -207,6 +207,15 @@
     # screenshot plasma issue -> use https://wiki.nixos.org/wiki/Flameshot
     grim
 
+
+    #<datanvim
+    gcc
+    gnumake
+    pkg-config
+    lua
+    luarocks
+    #datanvim>
+
  ];
 
 
