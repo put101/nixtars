@@ -37,12 +37,12 @@
   #};
 
 
-services.ollama.enable = true; 
-services.ollama.acceleration = "cuda"; # enable nvidia driver 
-hardware.graphics.enable = true; 
-hardware.nvidia.open = true; 
-hardware.opengl.enable = true; 
-services.xserver.videoDrivers = [ "nvidia" ];
+  #services.ollama.enable = true;
+  #services.ollama.acceleration = "cuda"; # enable nvidia driver
+  hardware.graphics.enable = true;
+  hardware.nvidia.open = true;
+  hardware.opengl.enable = true;
+  services.xserver.videoDrivers = [ "nvidia" ];
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -123,8 +123,7 @@ services.xserver.videoDrivers = [ "nvidia" ];
     extraGroups = [ "networkmanager" "wheel" "docker" ];
     packages = with pkgs; [
       kdePackages.kate
-    #  thunderbird
-      tree
+      #  thunderbird
     ];
   };
 
@@ -140,9 +139,11 @@ services.xserver.videoDrivers = [ "nvidia" ];
   programs.firefox.enable = true;
   programs.direnv.enable = true;
 
+  programs.fish.enable = true;
+
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
-  nixpkgs.config.cudaSupport = true;
+  #nixpkgs.config.cudaSupport = true;
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
@@ -169,9 +170,20 @@ services.xserver.videoDrivers = [ "nvidia" ];
    # uv 
     microsoft-edge
     signal-desktop
-    jetbrains.pycharm-professional
+    #jetbrains.pycharm-professional
     obsidian
     discord
+
+    #<fish
+    fishPlugins.done
+    fishPlugins.fzf-fish
+    fishPlugins.forgit
+    fishPlugins.hydro
+    fzf
+    fishPlugins.grc
+    grc
+    #fish>
+
     (pkgs.anki.withAddons [
       # Specify the anki-connect add-on and provide its configuration
       (pkgs.ankiAddons.anki-connect.withConfig {
@@ -188,9 +200,9 @@ services.xserver.videoDrivers = [ "nvidia" ];
         };
       })
     ])
-      cudaPackages.cudatoolkit
-  cudaPackages.cudnn
-  cudaPackages.nccl
+    #cudaPackages.cudatoolkit
+    #cudaPackages.cudnn
+    #cudaPackages.nccl
  ];
   
   
@@ -219,6 +231,6 @@ services.xserver.videoDrivers = [ "nvidia" ];
   # this value at the release version of the first install of this system.
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
-  system.stateVersion = "25.05"; # Did you read the comment?
+  system.stateVersion = "25.11"; # Did you read the comment?
 
 }
