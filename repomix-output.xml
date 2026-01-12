@@ -1,0 +1,1721 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+hosts/
+  default/
+    config.kdl
+    configuration.nix
+    home.nix
+secrets/
+  ca.rsa.4096.crt
+  pia.env
+.gitignore
+build.sh
+flake.lock
+flake.nix
+readme.md
+summary.txt
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="hosts/default/config.kdl">
+// This config is in the KDL format: https://kdl.dev
+// "/-" comments out the following node.
+// Check the wiki for a full description of the configuration:
+// https://yalter.github.io/niri/Configuration:-Introduction
+
+// Input device configuration.
+// Find the full list of options on the wiki:
+// https://yalter.github.io/niri/Configuration:-Input
+input {
+    keyboard {
+        xkb {
+            // You can set rules, model, layout, variant and options.
+            // For more information, see xkeyboard-config(7).
+
+            // For example:
+            // layout "us,ru"
+            // options "grp:win_space_toggle,compose:ralt,ctrl:nocaps"
+
+            // If this section is empty, niri will fetch xkb settings
+            // from org.freedesktop.locale1. You can control these using
+            // localectl set-x11-keymap.
+        }
+
+        // Enable numlock on startup, omitting this setting disables it.
+        numlock
+    }
+
+    // Next sections include libinput settings.
+    // Omitting settings disables them, or leaves them at their default values.
+    // All commented-out settings here are examples, not defaults.
+    touchpad {
+        // off
+        tap
+        // dwt
+        // dwtp
+        // drag false
+        // drag-lock
+        natural-scroll
+        // accel-speed 0.2
+        // accel-profile "flat"
+        // scroll-method "two-finger"
+        // disabled-on-external-mouse
+    }
+
+    mouse {
+        // off
+        // natural-scroll
+        // accel-speed 0.2
+        // accel-profile "flat"
+        // scroll-method "no-scroll"
+    }
+
+    trackpoint {
+        // off
+        // natural-scroll
+        // accel-speed 0.2
+        // accel-profile "flat"
+        // scroll-method "on-button-down"
+        // scroll-button 273
+        // scroll-button-lock
+        // middle-emulation
+    }
+
+    // Uncomment this to make the mouse warp to the center of newly focused windows.
+    // warp-mouse-to-focus
+
+    // Focus windows and outputs automatically when moving the mouse into them.
+    // Setting max-scroll-amount="0%" makes it work only on windows already fully on screen.
+    // focus-follows-mouse max-scroll-amount="0%"
+}
+
+// You can configure outputs by their name, which you can find
+// by running `niri msg outputs` while inside a niri instance.
+// The built-in laptop monitor is usually called "eDP-1".
+// Find more information on the wiki:
+// https://yalter.github.io/niri/Configuration:-Outputs
+// Remember to uncomment the node by removing "/-"!
+/-output "eDP-1" {
+    // Uncomment this line to disable this output.
+    // off
+
+    // Resolution and, optionally, refresh rate of the output.
+    // The format is "<width>x<height>" or "<width>x<height>@<refresh rate>".
+    // If the refresh rate is omitted, niri will pick the highest refresh rate
+    // for the resolution.
+    // If the mode is omitted altogether or is invalid, niri will pick one automatically.
+    // Run `niri msg outputs` while inside a niri instance to list all outputs and their modes.
+    mode "1920x1080@120.030"
+
+    // You can use integer or fractional scale, for example use 1.5 for 150% scale.
+    scale 2
+
+    // Transform allows to rotate the output counter-clockwise, valid values are:
+    // normal, 90, 180, 270, flipped, flipped-90, flipped-180 and flipped-270.
+    transform "normal"
+
+    // Position of the output in the global coordinate space.
+    // This affects directional monitor actions like "focus-monitor-left", and cursor movement.
+    // The cursor can only move between directly adjacent outputs.
+    // Output scale and rotation has to be taken into account for positioning:
+    // outputs are sized in logical, or scaled, pixels.
+    // For example, a 3840×2160 output with scale 2.0 will have a logical size of 1920×1080,
+    // so to put another output directly adjacent to it on the right, set its x to 1920.
+    // If the position is unset or results in an overlap, the output is instead placed
+    // automatically.
+    position x=1280 y=0
+}
+
+// Settings that influence how windows are positioned and sized.
+// Find more information on the wiki:
+// https://yalter.github.io/niri/Configuration:-Layout
+layout {
+    // Set gaps around windows in logical pixels.
+    gaps 16
+
+    // When to center a column when changing focus, options are:
+    // - "never", default behavior, focusing an off-screen column will keep at the left
+    //   or right edge of the screen.
+    // - "always", the focused column will always be centered.
+    // - "on-overflow", focusing a column will center it if it doesn't fit
+    //   together with the previously focused column.
+    center-focused-column "never"
+
+    // You can customize the widths that "switch-preset-column-width" (Mod+R) toggles between.
+    preset-column-widths {
+        // Proportion sets the width as a fraction of the output width, taking gaps into account.
+        // For example, you can perfectly fit four windows sized "proportion 0.25" on an output.
+        // The default preset widths are 1/3, 1/2 and 2/3 of the output.
+        proportion 0.33333
+        proportion 0.5
+        proportion 0.66667
+
+        // Fixed sets the width in logical pixels exactly.
+        // fixed 1920
+    }
+
+    // You can also customize the heights that "switch-preset-window-height" (Mod+Shift+R) toggles between.
+    // preset-window-heights { }
+
+    // You can change the default width of the new windows.
+    default-column-width { proportion 0.5; }
+    // If you leave the brackets empty, the windows themselves will decide their initial width.
+    // default-column-width {}
+
+    // By default focus ring and border are rendered as a solid background rectangle
+    // behind windows. That is, they will show up through semitransparent windows.
+    // This is because windows using client-side decorations can have an arbitrary shape.
+    //
+    // If you don't like that, you should uncomment `prefer-no-csd` below.
+    // Niri will draw focus ring and border *around* windows that agree to omit their
+    // client-side decorations.
+    //
+    // Alternatively, you can override it with a window rule called
+    // `draw-border-with-background`.
+
+    // You can change how the focus ring looks.
+    focus-ring {
+        // Uncomment this line to disable the focus ring.
+        // off
+
+        // How many logical pixels the ring extends out from the windows.
+        width 4
+
+        // Colors can be set in a variety of ways:
+        // - CSS named colors: "red"
+        // - RGB hex: "#rgb", "#rgba", "#rrggbb", "#rrggbbaa"
+        // - CSS-like notation: "rgb(255, 127, 0)", rgba(), hsl() and a few others.
+
+        // Color of the ring on the active monitor.
+        active-color "#7fc8ff"
+
+        // Color of the ring on inactive monitors.
+        //
+        // The focus ring only draws around the active window, so the only place
+        // where you can see its inactive-color is on other monitors.
+        inactive-color "#505050"
+
+        // You can also use gradients. They take precedence over solid colors.
+        // Gradients are rendered the same as CSS linear-gradient(angle, from, to).
+        // The angle is the same as in linear-gradient, and is optional,
+        // defaulting to 180 (top-to-bottom gradient).
+        // You can use any CSS linear-gradient tool on the web to set these up.
+        // Changing the color space is also supported, check the wiki for more info.
+        //
+        // active-gradient from="#80c8ff" to="#c7ff7f" angle=45
+
+        // You can also color the gradient relative to the entire view
+        // of the workspace, rather than relative to just the window itself.
+        // To do that, set relative-to="workspace-view".
+        //
+        // inactive-gradient from="#505050" to="#808080" angle=45 relative-to="workspace-view"
+    }
+
+    // You can also add a border. It's similar to the focus ring, but always visible.
+    border {
+        // The settings are the same as for the focus ring.
+        // If you enable the border, you probably want to disable the focus ring.
+        off
+
+        width 4
+        active-color "#ffc87f"
+        inactive-color "#505050"
+
+        // Color of the border around windows that request your attention.
+        urgent-color "#9b0000"
+
+        // Gradients can use a few different interpolation color spaces.
+        // For example, this is a pastel rainbow gradient via in="oklch longer hue".
+        //
+        // active-gradient from="#e5989b" to="#ffb4a2" angle=45 relative-to="workspace-view" in="oklch longer hue"
+
+        // inactive-gradient from="#505050" to="#808080" angle=45 relative-to="workspace-view"
+    }
+
+    // You can enable drop shadows for windows.
+    shadow {
+        // Uncomment the next line to enable shadows.
+        // on
+
+        // By default, the shadow draws only around its window, and not behind it.
+        // Uncomment this setting to make the shadow draw behind its window.
+        //
+        // Note that niri has no way of knowing about the CSD window corner
+        // radius. It has to assume that windows have square corners, leading to
+        // shadow artifacts inside the CSD rounded corners. This setting fixes
+        // those artifacts.
+        //
+        // However, instead you may want to set prefer-no-csd and/or
+        // geometry-corner-radius. Then, niri will know the corner radius and
+        // draw the shadow correctly, without having to draw it behind the
+        // window. These will also remove client-side shadows if the window
+        // draws any.
+        //
+        // draw-behind-window true
+
+        // You can change how shadows look. The values below are in logical
+        // pixels and match the CSS box-shadow properties.
+
+        // Softness controls the shadow blur radius.
+        softness 30
+
+        // Spread expands the shadow.
+        spread 5
+
+        // Offset moves the shadow relative to the window.
+        offset x=0 y=5
+
+        // You can also change the shadow color and opacity.
+        color "#0007"
+    }
+
+    // Struts shrink the area occupied by windows, similarly to layer-shell panels.
+    // You can think of them as a kind of outer gaps. They are set in logical pixels.
+    // Left and right struts will cause the next window to the side to always be visible.
+    // Top and bottom struts will simply add outer gaps in addition to the area occupied by
+    // layer-shell panels and regular gaps.
+    struts {
+        // left 64
+        // right 64
+        // top 64
+        // bottom 64
+    }
+}
+
+// Add lines like this to spawn processes at startup.
+// Note that running niri as a session supports xdg-desktop-autostart,
+// which may be more convenient to use.
+// See the binds section below for more spawn examples.
+
+// This line starts waybar, a commonly used bar for Wayland compositors.
+spawn-at-startup "waybar"
+
+// To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
+// spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
+
+hotkey-overlay {
+    // Uncomment this line to disable the "Important Hotkeys" pop-up at startup.
+    // skip-at-startup
+}
+
+// Uncomment this line to ask the clients to omit their client-side decorations if possible.
+// If the client will specifically ask for CSD, the request will be honored.
+// Additionally, clients will be informed that they are tiled, removing some client-side rounded corners.
+// This option will also fix border/focus ring drawing behind some semitransparent windows.
+// After enabling or disabling this, you need to restart the apps for this to take effect.
+// prefer-no-csd
+
+// You can change the path where screenshots are saved.
+// A ~ at the front will be expanded to the home directory.
+// The path is formatted with strftime(3) to give you the screenshot date and time.
+screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+// You can also set this to null to disable saving screenshots to disk.
+// screenshot-path null
+
+// Animation settings.
+// The wiki explains how to configure individual animations:
+// https://yalter.github.io/niri/Configuration:-Animations
+animations {
+    // Uncomment to turn off all animations.
+    // off
+
+    // Slow down all animations by this factor. Values below 1 speed them up instead.
+    // slowdown 3.0
+}
+
+// Window rules let you adjust behavior for individual windows.
+// Find more information on the wiki:
+// https://yalter.github.io/niri/Configuration:-Window-Rules
+
+// Work around WezTerm's initial configure bug
+// by setting an empty default-column-width.
+window-rule {
+    // This regular expression is intentionally made as specific as possible,
+    // since this is the default config, and we want no false positives.
+    // You can get away with just app-id="wezterm" if you want.
+    match app-id=r#"^org\.wezfurlong\.wezterm$"#
+    default-column-width {}
+}
+
+// Open the Firefox picture-in-picture player as floating by default.
+window-rule {
+    // This app-id regular expression will work for both:
+    // - host Firefox (app-id is "firefox")
+    // - Flatpak Firefox (app-id is "org.mozilla.firefox")
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+// Example: block out two password managers from screen capture.
+// (This example rule is commented out with a "/-" in front.)
+/-window-rule {
+    match app-id=r#"^org\.keepassxc\.KeePassXC$"#
+    match app-id=r#"^org\.gnome\.World\.Secrets$"#
+
+    block-out-from "screen-capture"
+
+    // Use this instead if you want them visible on third-party screenshot tools.
+    // block-out-from "screencast"
+}
+
+// Example: enable rounded corners for all windows.
+// (This example rule is commented out with a "/-" in front.)
+/-window-rule {
+    geometry-corner-radius 12
+    clip-to-geometry true
+}
+
+binds {
+    // Keys consist of modifiers separated by + signs, followed by an XKB key name
+    // in the end. To find an XKB name for a particular key, you may use a program
+    // like wev.
+    //
+    // "Mod" is a special modifier equal to Super when running on a TTY, and to Alt
+    // when running as a winit window.
+    //
+    // Most actions that you can bind here can also be invoked programmatically with
+    // `niri msg action do-something`.
+
+    // Mod-Shift-/, which is usually the same as Mod-?,
+    // shows a list of important hotkeys.
+    Mod+Shift+Slash { show-hotkey-overlay; }
+    Mod+?
+
+    // Suggested binds for running programs: terminal, app launcher, screen locker.
+    Mod+T hotkey-overlay-title="Open a Terminal: alacritty" { spawn "alacritty"; }
+    Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
+    Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
+
+    // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
+    // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
+    // For example, this is a standard bind to toggle the screen reader (orca).
+    Super+Alt+S allow-when-locked=true hotkey-overlay-title=null { spawn-sh "pkill orca || exec orca"; }
+
+    // Example volume keys mappings for PipeWire & WirePlumber.
+    // The allow-when-locked=true property makes them work even when the session is locked.
+    // Using spawn-sh allows to pass multiple arguments together with the command.
+    XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1+"; }
+    XF86AudioLowerVolume allow-when-locked=true { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.1-"; }
+    XF86AudioMute        allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"; }
+    XF86AudioMicMute     allow-when-locked=true { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
+
+    // Example brightness key mappings for brightnessctl.
+    // You can use regular spawn with multiple arguments too (to avoid going through "sh"),
+    // but you need to manually put each argument in separate "" quotes.
+    XF86MonBrightnessUp allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "+10%"; }
+    XF86MonBrightnessDown allow-when-locked=true { spawn "brightnessctl" "--class=backlight" "set" "10%-"; }
+
+    // Open/close the Overview: a zoomed-out view of workspaces and windows.
+    // You can also move the mouse into the top-left hot corner,
+    // or do a four-finger swipe up on a touchpad.
+    Mod+O repeat=false { toggle-overview; }
+
+    Mod+Q repeat=false { close-window; }
+
+    Mod+Left  { focus-column-left; }
+    Mod+Down  { focus-window-down; }
+    Mod+Up    { focus-window-up; }
+    Mod+Right { focus-column-right; }
+    Mod+H     { focus-column-left; }
+    Mod+J     { focus-window-down; }
+    Mod+K     { focus-window-up; }
+    Mod+L     { focus-column-right; }
+
+    Mod+Ctrl+Left  { move-column-left; }
+    Mod+Ctrl+Down  { move-window-down; }
+    Mod+Ctrl+Up    { move-window-up; }
+    Mod+Ctrl+Right { move-column-right; }
+    Mod+Ctrl+H     { move-column-left; }
+    Mod+Ctrl+J     { move-window-down; }
+    Mod+Ctrl+K     { move-window-up; }
+    Mod+Ctrl+L     { move-column-right; }
+
+    // Alternative commands that move across workspaces when reaching
+    // the first or last window in a column.
+    // Mod+J     { focus-window-or-workspace-down; }
+    // Mod+K     { focus-window-or-workspace-up; }
+    // Mod+Ctrl+J     { move-window-down-or-to-workspace-down; }
+    // Mod+Ctrl+K     { move-window-up-or-to-workspace-up; }
+
+    Mod+Home { focus-column-first; }
+    Mod+End  { focus-column-last; }
+    Mod+Ctrl+Home { move-column-to-first; }
+    Mod+Ctrl+End  { move-column-to-last; }
+
+    Mod+Shift+Left  { focus-monitor-left; }
+    Mod+Shift+Down  { focus-monitor-down; }
+    Mod+Shift+Up    { focus-monitor-up; }
+    Mod+Shift+Right { focus-monitor-right; }
+    Mod+Shift+H     { focus-monitor-left; }
+    Mod+Shift+J     { focus-monitor-down; }
+    Mod+Shift+K     { focus-monitor-up; }
+    Mod+Shift+L     { focus-monitor-right; }
+
+    Mod+Shift+Ctrl+Left  { move-column-to-monitor-left; }
+    Mod+Shift+Ctrl+Down  { move-column-to-monitor-down; }
+    Mod+Shift+Ctrl+Up    { move-column-to-monitor-up; }
+    Mod+Shift+Ctrl+Right { move-column-to-monitor-right; }
+    Mod+Shift+Ctrl+H     { move-column-to-monitor-left; }
+    Mod+Shift+Ctrl+J     { move-column-to-monitor-down; }
+    Mod+Shift+Ctrl+K     { move-column-to-monitor-up; }
+    Mod+Shift+Ctrl+L     { move-column-to-monitor-right; }
+
+    // Alternatively, there are commands to move just a single window:
+    // Mod+Shift+Ctrl+Left  { move-window-to-monitor-left; }
+    // ...
+
+    // And you can also move a whole workspace to another monitor:
+    // Mod+Shift+Ctrl+Left  { move-workspace-to-monitor-left; }
+    // ...
+
+    Mod+Page_Down      { focus-workspace-down; }
+    Mod+Page_Up        { focus-workspace-up; }
+    Mod+U              { focus-workspace-down; }
+    Mod+I              { focus-workspace-up; }
+    Mod+Ctrl+Page_Down { move-column-to-workspace-down; }
+    Mod+Ctrl+Page_Up   { move-column-to-workspace-up; }
+    Mod+Ctrl+U         { move-column-to-workspace-down; }
+    Mod+Ctrl+I         { move-column-to-workspace-up; }
+
+    // Alternatively, there are commands to move just a single window:
+    // Mod+Ctrl+Page_Down { move-window-to-workspace-down; }
+    // ...
+
+    Mod+Shift+Page_Down { move-workspace-down; }
+    Mod+Shift+Page_Up   { move-workspace-up; }
+    Mod+Shift+U         { move-workspace-down; }
+    Mod+Shift+I         { move-workspace-up; }
+
+    // You can bind mouse wheel scroll ticks using the following syntax.
+    // These binds will change direction based on the natural-scroll setting.
+    //
+    // To avoid scrolling through workspaces really fast, you can use
+    // the cooldown-ms property. The bind will be rate-limited to this value.
+    // You can set a cooldown on any bind, but it's most useful for the wheel.
+    Mod+WheelScrollDown      cooldown-ms=150 { focus-workspace-down; }
+    Mod+WheelScrollUp        cooldown-ms=150 { focus-workspace-up; }
+    Mod+Ctrl+WheelScrollDown cooldown-ms=150 { move-column-to-workspace-down; }
+    Mod+Ctrl+WheelScrollUp   cooldown-ms=150 { move-column-to-workspace-up; }
+
+    Mod+WheelScrollRight      { focus-column-right; }
+    Mod+WheelScrollLeft       { focus-column-left; }
+    Mod+Ctrl+WheelScrollRight { move-column-right; }
+    Mod+Ctrl+WheelScrollLeft  { move-column-left; }
+
+    // Usually scrolling up and down with Shift in applications results in
+    // horizontal scrolling; these binds replicate that.
+    Mod+Shift+WheelScrollDown      { focus-column-right; }
+    Mod+Shift+WheelScrollUp        { focus-column-left; }
+    Mod+Ctrl+Shift+WheelScrollDown { move-column-right; }
+    Mod+Ctrl+Shift+WheelScrollUp   { move-column-left; }
+
+    // Similarly, you can bind touchpad scroll "ticks".
+    // Touchpad scrolling is continuous, so for these binds it is split into
+    // discrete intervals.
+    // These binds are also affected by touchpad's natural-scroll, so these
+    // example binds are "inverted", since we have natural-scroll enabled for
+    // touchpads by default.
+    // Mod+TouchpadScrollDown { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.02+"; }
+    // Mod+TouchpadScrollUp   { spawn-sh "wpctl set-volume @DEFAULT_AUDIO_SINK@ 0.02-"; }
+
+    // You can refer to workspaces by index. However, keep in mind that
+    // niri is a dynamic workspace system, so these commands are kind of
+    // "best effort". Trying to refer to a workspace index bigger than
+    // the current workspace count will instead refer to the bottommost
+    // (empty) workspace.
+    //
+    // For example, with 2 workspaces + 1 empty, indices 3, 4, 5 and so on
+    // will all refer to the 3rd workspace.
+    Mod+1 { focus-workspace 1; }
+    Mod+2 { focus-workspace 2; }
+    Mod+3 { focus-workspace 3; }
+    Mod+4 { focus-workspace 4; }
+    Mod+5 { focus-workspace 5; }
+    Mod+6 { focus-workspace 6; }
+    Mod+7 { focus-workspace 7; }
+    Mod+8 { focus-workspace 8; }
+    Mod+9 { focus-workspace 9; }
+    Mod+Ctrl+1 { move-column-to-workspace 1; }
+    Mod+Ctrl+2 { move-column-to-workspace 2; }
+    Mod+Ctrl+3 { move-column-to-workspace 3; }
+    Mod+Ctrl+4 { move-column-to-workspace 4; }
+    Mod+Ctrl+5 { move-column-to-workspace 5; }
+    Mod+Ctrl+6 { move-column-to-workspace 6; }
+    Mod+Ctrl+7 { move-column-to-workspace 7; }
+    Mod+Ctrl+8 { move-column-to-workspace 8; }
+    Mod+Ctrl+9 { move-column-to-workspace 9; }
+
+    // Alternatively, there are commands to move just a single window:
+    // Mod+Ctrl+1 { move-window-to-workspace 1; }
+
+    // Switches focus between the current and the previous workspace.
+    // Mod+Tab { focus-workspace-previous; }
+
+    // The following binds move the focused window in and out of a column.
+    // If the window is alone, they will consume it into the nearby column to the side.
+    // If the window is already in a column, they will expel it out.
+    Mod+BracketLeft  { consume-or-expel-window-left; }
+    Mod+BracketRight { consume-or-expel-window-right; }
+
+    // Consume one window from the right to the bottom of the focused column.
+    Mod+Comma  { consume-window-into-column; }
+    // Expel the bottom window from the focused column to the right.
+    Mod+Period { expel-window-from-column; }
+
+    Mod+R { switch-preset-column-width; }
+    // Cycling through the presets in reverse order is also possible.
+    // Mod+R { switch-preset-column-width-back; }
+    Mod+Shift+R { switch-preset-window-height; }
+    Mod+Ctrl+R { reset-window-height; }
+    Mod+F { maximize-column; }
+    Mod+Shift+F { fullscreen-window; }
+
+    // Expand the focused column to space not taken up by other fully visible columns.
+    // Makes the column "fill the rest of the space".
+    Mod+Ctrl+F { expand-column-to-available-width; }
+
+    Mod+C { center-column; }
+
+    // Center all fully visible columns on screen.
+    Mod+Ctrl+C { center-visible-columns; }
+
+    // Finer width adjustments.
+    // This command can also:
+    // * set width in pixels: "1000"
+    // * adjust width in pixels: "-5" or "+5"
+    // * set width as a percentage of screen width: "25%"
+    // * adjust width as a percentage of screen width: "-10%" or "+10%"
+    // Pixel sizes use logical, or scaled, pixels. I.e. on an output with scale 2.0,
+    // set-column-width "100" will make the column occupy 200 physical screen pixels.
+    Mod+Minus { set-column-width "-10%"; }
+    Mod+Equal { set-column-width "+10%"; }
+
+    // Finer height adjustments when in column with other windows.
+    Mod+Shift+Minus { set-window-height "-10%"; }
+    Mod+Shift+Equal { set-window-height "+10%"; }
+
+    // Move the focused window between the floating and the tiling layout.
+    Mod+V       { toggle-window-floating; }
+    Mod+Shift+V { switch-focus-between-floating-and-tiling; }
+
+    // Toggle tabbed column display mode.
+    // Windows in this column will appear as vertical tabs,
+    // rather than stacked on top of each other.
+    Mod+W { toggle-column-tabbed-display; }
+
+    // Actions to switch layouts.
+    // Note: if you uncomment these, make sure you do NOT have
+    // a matching layout switch hotkey configured in xkb options above.
+    // Having both at once on the same hotkey will break the switching,
+    // since it will switch twice upon pressing the hotkey (once by xkb, once by niri).
+    // Mod+Space       { switch-layout "next"; }
+    // Mod+Shift+Space { switch-layout "prev"; }
+
+    Print { screenshot; }
+    Ctrl+Print { screenshot-screen; }
+    Alt+Print { screenshot-window; }
+
+    // Applications such as remote-desktop clients and software KVM switches may
+    // request that niri stops processing the keyboard shortcuts defined here
+    // so they may, for example, forward the key presses as-is to a remote machine.
+    // It's a good idea to bind an escape hatch to toggle the inhibitor,
+    // so a buggy application can't hold your session hostage.
+    //
+    // The allow-inhibiting=false property can be applied to other binds as well,
+    // which ensures niri always processes them, even when an inhibitor is active.
+    Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
+
+    // The quit action will show a confirmation dialog to avoid accidental exits.
+    Mod+Shift+E { quit; }
+    Ctrl+Alt+Delete { quit; }
+
+    // Powers off the monitors. To turn them back on, do any input like
+    // moving the mouse or pressing any other key.
+    Mod+Shift+P { power-off-monitors; }
+}
+</file>
+
+<file path="secrets/ca.rsa.4096.crt">
+-----BEGIN CERTIFICATE-----
+MIIHqzCCBZOgAwIBAgIJAJ0u+vODZJntMA0GCSqGSIb3DQEBDQUAMIHoMQswCQYD
+VQQGEwJVUzELMAkGA1UECBMCQ0ExEzARBgNVBAcTCkxvc0FuZ2VsZXMxIDAeBgNV
+BAoTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMSAwHgYDVQQLExdQcml2YXRlIElu
+dGVybmV0IEFjY2VzczEgMB4GA1UEAxMXUHJpdmF0ZSBJbnRlcm5ldCBBY2Nlc3Mx
+IDAeBgNVBCkTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMS8wLQYJKoZIhvcNAQkB
+FiBzZWN1cmVAcHJpdmF0ZWludGVybmV0YWNjZXNzLmNvbTAeFw0xNDA0MTcxNzQw
+MzNaFw0zNDA0MTIxNzQwMzNaMIHoMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0Ex
+EzARBgNVBAcTCkxvc0FuZ2VsZXMxIDAeBgNVBAoTF1ByaXZhdGUgSW50ZXJuZXQg
+QWNjZXNzMSAwHgYDVQQLExdQcml2YXRlIEludGVybmV0IEFjY2VzczEgMB4GA1UE
+AxMXUHJpdmF0ZSBJbnRlcm5ldCBBY2Nlc3MxIDAeBgNVBCkTF1ByaXZhdGUgSW50
+ZXJuZXQgQWNjZXNzMS8wLQYJKoZIhvcNAQkBFiBzZWN1cmVAcHJpdmF0ZWludGVy
+bmV0YWNjZXNzLmNvbTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBALVk
+hjumaqBbL8aSgj6xbX1QPTfTd1qHsAZd2B97m8Vw31c/2yQgZNf5qZY0+jOIHULN
+De4R9TIvyBEbvnAg/OkPw8n/+ScgYOeH876VUXzjLDBnDb8DLr/+w9oVsuDeFJ9K
+V2UFM1OYX0SnkHnrYAN2QLF98ESK4NCSU01h5zkcgmQ+qKSfA9Ny0/UpsKPBFqsQ
+25NvjDWFhCpeqCHKUJ4Be27CDbSl7lAkBuHMPHJs8f8xPgAbHRXZOxVCpayZ2SND
+fCwsnGWpWFoMGvdMbygngCn6jA/W1VSFOlRlfLuuGe7QFfDwA0jaLCxuWt/BgZyl
+p7tAzYKR8lnWmtUCPm4+BtjyVDYtDCiGBD9Z4P13RFWvJHw5aapx/5W/CuvVyI7p
+Kwvc2IT+KPxCUhH1XI8ca5RN3C9NoPJJf6qpg4g0rJH3aaWkoMRrYvQ+5PXXYUzj
+tRHImghRGd/ydERYoAZXuGSbPkm9Y/p2X8unLcW+F0xpJD98+ZI+tzSsI99Zs5wi
+jSUGYr9/j18KHFTMQ8n+1jauc5bCCegN27dPeKXNSZ5riXFL2XX6BkY68y58UaNz
+meGMiUL9BOV1iV+PMb7B7PYs7oFLjAhh0EdyvfHkrh/ZV9BEhtFa7yXp8XR0J6vz
+1YV9R6DYJmLjOEbhU8N0gc3tZm4Qz39lIIG6w3FDAgMBAAGjggFUMIIBUDAdBgNV
+HQ4EFgQUrsRtyWJftjpdRM0+925Y6Cl08SUwggEfBgNVHSMEggEWMIIBEoAUrsRt
+yWJftjpdRM0+925Y6Cl08SWhge6kgeswgegxCzAJBgNVBAYTAlVTMQswCQYDVQQI
+EwJDQTETMBEGA1UEBxMKTG9zQW5nZWxlczEgMB4GA1UEChMXUHJpdmF0ZSBJbnRl
+cm5ldCBBY2Nlc3MxIDAeBgNVBAsTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMSAw
+HgYDVQQDExdQcml2YXRlIEludGVybmV0IEFjY2VzczEgMB4GA1UEKRMXUHJpdmF0
+ZSBJbnRlcm5ldCBBY2Nlc3MxLzAtBgkqhkiG9w0BCQEWIHNlY3VyZUBwcml2YXRl
+aW50ZXJuZXRhY2Nlc3MuY29tggkAnS7684Nkme0wDAYDVR0TBAUwAwEB/zANBgkq
+hkiG9w0BAQ0FAAOCAgEAJsfhsPk3r8kLXLxY+v+vHzbr4ufNtqnL9/1Uuf8NrsCt
+pXAoyZ0YqfbkWx3NHTZ7OE9ZRhdMP/RqHQE1p4N4Sa1nZKhTKasV6KhHDqSCt/dv
+Em89xWm2MVA7nyzQxVlHa9AkcBaemcXEiyT19XdpiXOP4Vhs+J1R5m8zQOxZlV1G
+tF9vsXmJqWZpOVPmZ8f35BCsYPvv4yMewnrtAC8PFEK/bOPeYcKN50bol22QYaZu
+LfpkHfNiFTnfMh8sl/ablPyNY7DUNiP5DRcMdIwmfGQxR5WEQoHL3yPJ42LkB5zs
+6jIm26DGNXfwura/mi105+ENH1CaROtRYwkiHb08U6qLXXJz80mWJkT90nr8Asj3
+5xN2cUppg74nG3YVav/38P48T56hG1NHbYF5uOCske19F6wi9maUoto/3vEr0rnX
+JUp2KODmKdvBI7co245lHBABWikk8VfejQSlCtDBXn644ZMtAdoxKNfR2WTFVEwJ
+iyd1Fzx0yujuiXDROLhISLQDRjVVAvawrAtLZWYK31bY7KlezPlQnl/D9Asxe85l
+8jO5+0LdJ6VyOs/Hd4w52alDW/MFySDZSfQHMTIc30hLBJ8OnCEIvluVQQ2UQvoW
++no177N9L2Y+M9TcTA62ZyMXShHQGeh20rb4kK8f+iFX8NxtdHVSkxMEFSfDDyQ=
+-----END CERTIFICATE-----
+</file>
+
+<file path="secrets/pia.env">
+PIA_USER=p0060776
+PIA_PASS=G3HF3GZpLR
+PIA_AUTOCONNECT=true
+PIA_PROTOCOL=wireguard
+</file>
+
+<file path=".gitignore">
+hardware-configuration.nix
+</file>
+
+<file path="build.sh">
+nixos-rebuild switch --flake .#nixtars
+</file>
+
+<file path="flake.lock">
+{
+  "nodes": {
+    "flake-compat": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1751685974,
+        "narHash": "sha256-NKw96t+BgHIYzHUjkTK95FqYRVKB8DHpVhefWSz/kTw=",
+        "ref": "refs/heads/main",
+        "rev": "549f2762aebeff29a2e5ece7a7dc0f955281a1d1",
+        "revCount": 92,
+        "type": "git",
+        "url": "https://git.lix.systems/lix-project/flake-compat.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://git.lix.systems/lix-project/flake-compat.git"
+      }
+    },
+    "flake-parts": {
+      "inputs": {
+        "nixpkgs-lib": [
+          "nvf",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1760948891,
+        "narHash": "sha256-TmWcdiUUaWk8J4lpjzu4gCGxWY6/Ok7mOK4fIFfBuU4=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "864599284fc7c0ba6357ed89ed5e2cd5040f0c04",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "flake-utils": {
+      "inputs": {
+        "systems": "systems"
+      },
+      "locked": {
+        "lastModified": 1731533236,
+        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "home-manager": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1768068402,
+        "narHash": "sha256-bAXnnJZKJiF7Xr6eNW6+PhBf1lg2P1aFUO9+xgWkXfA=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "8bc5473b6bc2b6e1529a9c4040411e1199c43b4c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "lazyvim": {
+      "inputs": {
+        "flake-utils": "flake-utils",
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1767986188,
+        "narHash": "sha256-z3m/3JomuimxQUVauP9n1GO+QHa50xvAMLKKw1vWE0Q=",
+        "owner": "pfassina",
+        "repo": "lazyvim-nix",
+        "rev": "af3997a8b663ae0d570ae04867cd4b51873adfe2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "pfassina",
+        "repo": "lazyvim-nix",
+        "type": "github"
+      }
+    },
+    "mnw": {
+      "locked": {
+        "lastModified": 1758834834,
+        "narHash": "sha256-Y7IvY4F8vajZyp3WGf+KaiIVwondEkMFkt92Cr9NZmg=",
+        "owner": "Gerg-L",
+        "repo": "mnw",
+        "rev": "cfbc7d1cc832e318d0863a5fc91d940a96034001",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Gerg-L",
+        "repo": "mnw",
+        "type": "github"
+      }
+    },
+    "ndg": {
+      "inputs": {
+        "nixpkgs": [
+          "nvf",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1765720983,
+        "narHash": "sha256-tWtukpABmux6EC/FuCJEgA1kmRjcRPtED44N+GGPq+4=",
+        "owner": "feel-co",
+        "repo": "ndg",
+        "rev": "f399ace8bb8e1f705dd8942b24d207aa4d75c936",
+        "type": "github"
+      },
+      "original": {
+        "owner": "feel-co",
+        "repo": "ndg",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1752480373,
+        "narHash": "sha256-JHQbm+OcGp32wAsXTE/FLYGNpb+4GLi5oTvCxwSoBOA=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "62e0f05ede1da0d54515d4ea8ce9c733f12d9f08",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1767892417,
+        "narHash": "sha256-dhhvQY67aboBk8b0/u0XB6vwHdgbROZT3fJAjyNh5Ww=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "3497aa5c9457a9d88d71fa93a4a8368816fbeeba",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nvf": {
+      "inputs": {
+        "flake-compat": "flake-compat",
+        "flake-parts": "flake-parts",
+        "mnw": "mnw",
+        "ndg": "ndg",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "systems": "systems_2"
+      },
+      "locked": {
+        "lastModified": 1768135144,
+        "narHash": "sha256-c9q5pGqfVEcxqXLmjug0skKdE4IT4zFKbQdEzXGHTVY=",
+        "owner": "notashelf",
+        "repo": "nvf",
+        "rev": "c7fe3c1818d01f71f2e1a0ec9b8e1c6a7e5c171b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "notashelf",
+        "repo": "nvf",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "home-manager": "home-manager",
+        "lazyvim": "lazyvim",
+        "nixpkgs": "nixpkgs_2",
+        "nvf": "nvf"
+      }
+    },
+    "systems": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
+    "systems_2": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
+</file>
+
+<file path="flake.nix">
+{
+  description = "Nixos config flake";
+  nixConfig = { 
+  	extra-substituters = [
+	  "https://cache.nixos.org"
+          "https://nix-community.cachix.org"
+	  "https://cuda-maintainers.cachix.org"
+	];
+	extra-trusted-public-keys = [
+	      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+		"cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
+	];
+  };
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+
+
+    #nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    #home-manager.url = "github:nix-community/home-manager";
+    lazyvim.url = "github:pfassina/lazyvim-nix";
+
+    #nix-pia-vpn = {
+     #url = "github:rcambrj/nix-pia-vpn";
+     #inputs.nixpkgs.follows = "nixpkgs";
+    #};
+
+    nvf = {
+      url = "github:notashelf/nvf";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = { self, nixpkgs, home-manager, lazyvim, ... }@inputs: {
+    # use "nixos", or your hostname as the name of the configuration
+    # it's a better practice than "default" shown in the video
+    nixosConfigurations.nixtars = nixpkgs.lib.nixosSystem {
+      specialArgs = {inherit inputs;};
+      modules = [
+        ./hosts/default/configuration.nix
+        inputs.home-manager.nixosModules.default
+	  #inputs.nix-pia-vpn.nixosModules.default
+      ];
+    };
+  };
+}
+</file>
+
+<file path="readme.md">
+# Commands: 
+
+```sh
+sudo nixos-rebuild switch --flake /etc/nixos/#default
+```
+</file>
+
+<file path="summary.txt">
+{
+  "nodes": {
+    "home-manager": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1758593331,
+        "narHash": "sha256-p+904PfmINyekyA/LieX3IYGsiFtExC00v5gSYfJtpM=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "9a2dc0efbc569ce9352a6ffb8e8ec8dbc098e142",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1758427187,
+        "narHash": "sha256-pHpxZ/IyCwoTQPtFIAG2QaxuSm8jWzrzBGjwQZIttJc=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "554be6495561ff07b6c724047bdd7e0716aa7b46",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "home-manager": "home-manager",
+        "nixpkgs": "nixpkgs"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
+{
+  description = "Nixos config flake";
+  nixConfig = { 
+  	extra-substituters = [
+		"https://cuda-maintainers.cachix.org"
+	];
+	extra-trusted-public-keys = [
+		"cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
+	];
+  };
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    #nix-pia-vpn = {
+     #url = "github:rcambrj/nix-pia-vpn";
+     #inputs.nixpkgs.follows = "nixpkgs";
+    #};
+  };
+
+  outputs = { self, nixpkgs, ... }@inputs: {
+    # use "nixos", or your hostname as the name of the configuration
+    # it's a better practice than "default" shown in the video
+    nixosConfigurations.nixtars = nixpkgs.lib.nixosSystem {
+      specialArgs = {inherit inputs;};
+      modules = [
+        ./hosts/default/configuration.nix
+        inputs.home-manager.nixosModules.default
+	  #inputs.nix-pia-vpn.nixosModules.default
+      ];
+    };
+  };
+}
+
+# Commands: 
+
+```sh
+sudo nixos-rebuild switch --flake /etc/nixos/#default
+```
+nixos-rebuild switch --flake .#nixtars
+{
+  "nodes": {
+    "home-manager": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1758593331,
+        "narHash": "sha256-p+904PfmINyekyA/LieX3IYGsiFtExC00v5gSYfJtpM=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "9a2dc0efbc569ce9352a6ffb8e8ec8dbc098e142",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1758427187,
+        "narHash": "sha256-pHpxZ/IyCwoTQPtFIAG2QaxuSm8jWzrzBGjwQZIttJc=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "554be6495561ff07b6c724047bdd7e0716aa7b46",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "home-manager": "home-manager",
+        "nixpkgs": "nixpkgs"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
+{
+  description = "Nixos config flake";
+  nixConfig = { 
+  	extra-substituters = [
+	  "https://cache.nixos.org"
+          "https://nix-community.cachix.org"
+	  "https://cuda-maintainers.cachix.org"
+	];
+	extra-trusted-public-keys = [
+	      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+		"cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
+	];
+  };
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    #nix-pia-vpn = {
+     #url = "github:rcambrj/nix-pia-vpn";
+     #inputs.nixpkgs.follows = "nixpkgs";
+    #};
+  };
+
+  outputs = { self, nixpkgs, ... }@inputs: {
+    # use "nixos", or your hostname as the name of the configuration
+    # it's a better practice than "default" shown in the video
+    nixosConfigurations.nixtars = nixpkgs.lib.nixosSystem {
+      specialArgs = {inherit inputs;};
+      modules = [
+        ./hosts/default/configuration.nix
+        inputs.home-manager.nixosModules.default
+	  #inputs.nix-pia-vpn.nixosModules.default
+      ];
+    };
+  };
+}
+
+# Commands: 
+
+```sh
+sudo nixos-rebuild switch --flake /etc/nixos/#default
+```
+</file>
+
+<file path="hosts/default/configuration.nix">
+# Edit this configuration file to define what should be installed on
+# your system.  Help is available in the configuration.nix(5) man page
+# and in the NixOS manual (accessible by running ‘nixos-help’).
+
+{ config, pkgs, lib, inputs, ... }:
+
+{
+  imports =
+    [ # Include the results of the hardware scan.
+      ./hardware-configuration.nix
+      inputs.home-manager.nixosModules.default
+    ];
+
+  hardware.bluetooth.enable = true;
+
+  services.blueman.enable = true;
+  services.libinput.mouse.horizontalScrolling = true;
+
+
+  nix.settings = {
+    trusted-users = [ "root" "tobi" ];
+    substituters = [
+            "https://cache.nixos.org"
+      "https://nix-community.cachix.org"
+      "https://cuda-maintainers.cachix.org"
+    ];
+    trusted-public-keys = [
+    "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
+    ];
+  };
+
+  #services.pia-vpn = {
+  #  enable = true;
+  #  certificateFile = toString ../../secrets/ca.rsa.4096.crt;
+  #  environmentFile = toString ../../secrets/pia.env;
+  #};
+
+
+  #services.ollama.enable = true;
+  #services.ollama.acceleration = "cuda"; # enable nvidia driver
+  hardware.graphics.enable = true;
+  hardware.nvidia.open = true;
+  hardware.opengl.enable = true;
+  services.xserver.videoDrivers = [ "nvidia" ];
+
+  # Bootloader.
+  boot.loader.systemd-boot.enable = true;
+  boot.loader.efi.canTouchEfiVariables = true;
+
+  networking.hostName = "nixtars"; # Define your hostname.
+  # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
+
+  # Configure network proxy if necessary
+  # networking.proxy.default = "http://user:password@proxy:port/";
+  # networking.proxy.noProxy = "127.0.0.1,localhost,internal.domain";
+
+  # Enable networking
+  networking.networkmanager.enable = true;
+  nix.settings.experimental-features = ["nix-command" "flakes" ];
+
+  virtualisation.docker.enable = true;
+
+
+  # Set your time zone.
+  time.timeZone = "Europe/Vienna";
+
+  # Select internationalisation properties.
+  i18n.defaultLocale = "en_US.UTF-8";
+
+  i18n.extraLocaleSettings = {
+    LC_ADDRESS = "de_AT.UTF-8";
+    LC_IDENTIFICATION = "de_AT.UTF-8";
+    LC_MEASUREMENT = "de_AT.UTF-8";
+    LC_MONETARY = "de_AT.UTF-8";
+    LC_NAME = "de_AT.UTF-8";
+    LC_NUMERIC = "de_AT.UTF-8";
+    LC_PAPER = "de_AT.UTF-8";
+    LC_TELEPHONE = "de_AT.UTF-8";
+    LC_TIME = "de_AT.UTF-8";
+  };
+
+  # Enable the X11 windowing system.
+  # You can disable this if you're only using the Wayland session.
+  services.xserver.enable = true;
+
+  # Enable the KDE Plasma Desktop Environment.
+  services.displayManager.sddm.enable = true;
+  services.desktopManager.plasma6.enable = true;
+
+  # Add this line to force Niri selected by default
+  services.displayManager.defaultSession = "niri";
+
+  # Configure keymap in X11
+  services.xserver.xkb = {
+    layout = "at";
+    variant = "";
+  };
+
+  # Enable CUPS to print documents.
+  services.printing.enable = true;
+
+  # Enable sound with pipewire.
+  services.pulseaudio.enable = false;
+  security.rtkit.enable = true;
+  services.pipewire = {
+    enable = true;
+    alsa.enable = true;
+    alsa.support32Bit = true;
+    pulse.enable = true;
+    # If you want to use JACK applications, uncomment this
+    #jack.enable = true;
+
+    # use the example session manager (no others are packaged yet so this is enabled by default,
+    # no need to redefine it in your config for now)
+    #media-session.enable = true;
+  };
+
+  fonts = {
+    packages = with pkgs; [
+      noto-fonts
+      liberation_ttf
+      nerd-fonts.fira-code
+      nerd-fonts.droid-sans-mono
+      nerd-fonts.hack
+      nerd-fonts.lilex
+      nerd-fonts._0xproto
+      nerd-fonts.ubuntu
+    ];
+  };
+
+
+  # Enable touchpad support (enabled default in most desktopManager).
+  # services.xserver.libinput.enable = true;
+
+  # Define a user account. Don't forget to set a password with ‘passwd’.
+  users.users.tobi = {
+    isNormalUser = true;
+    description = "tobi";
+    extraGroups = [ "networkmanagercachix use nvf " "wheel" "docker" ];
+    packages = with pkgs; [
+      kdePackages.kate
+      #  thunderbird
+    ];
+  };
+
+  home-manager = {
+	  # also pass inputs to home-manager modules
+	  extraSpecialArgs = {inherit inputs;};
+	  users = {
+	    "tobi" = import ./home.nix;
+	  };
+  };
+
+  # Install firefox.
+  programs.firefox.enable = true;
+  programs.direnv.enable = true;
+
+  programs.fish.enable = true;
+
+
+
+  # uv, numpy import error: libstdc++
+  programs.nix-ld.enable = true;
+  programs.nix-ld.libraries = with pkgs; [
+    (lib.getLib pkgs.stdenv.cc.cc)  # provides libstdc++.so.6 and libgcc_s.so.1
+    pkgs.zlib
+    pkgs.libffi
+    pkgs.openssl
+    pkgs.glibc
+  ];
+
+  #niri
+  programs.niri.enable = true;
+
+  # Allow unfree packages
+  nixpkgs.config.allowUnfree = true;
+  #nixpkgs.config.cudaSupport = true;
+
+  # List packages installed in system profile. To search, run:
+  # $ nix search wget
+  environment.systemPackages = with pkgs; [
+  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    cachix
+    wget
+    jq
+    lsof
+    tree
+    gh
+    docker
+    docker-color-output
+    oxker
+    vim
+    neovim
+    xsel
+    vscode
+    tealdeer
+    xclip
+    bat
+    fastfetch
+    python3
+    uv
+    microsoft-edge
+    signal-desktop
+    #jetbrains.pycharm-professional
+    obsidian
+    discord
+
+    #<fish
+    fishPlugins.done
+    fishPlugins.fzf-fish
+    fishPlugins.forgit
+    fishPlugins.hydro
+    fzf
+    fishPlugins.grc
+    grc
+    #fish>
+
+    gemini-cli
+    tmux
+
+    (pkgs.anki.withAddons [
+      # Specify the anki-connect add-on and provide its configuration
+      (pkgs.ankiAddons.anki-connect.withConfig {
+        # The configuration is passed as an attribute set here
+        config = {
+          # This key is required by the Obsidian plugin
+          webCorsOriginList = [
+            "http://localhost"
+            "app://obsidian.md"
+          ];
+          # You can set other AnkiConnect options here if needed,
+          # but the defaults are usually fine.
+          # Example: webBindAddress = "127.0.0.1";
+        };
+      })
+    ])
+    #cudaPackages.cudatoolkit
+    #cudaPackages.cudnn
+    #cudaPackages.nccl
+
+    # screenshot plasma issue -> use https://wiki.nixos.org/wiki/Flameshot
+    grim
+
+
+    #<datanvim
+    gcc
+    gnumake
+    pkg-config
+    lua5_1
+    luarocks
+    imagemagick
+    luaPackages.luarocks
+    #datanvim>
+
+ ];
+
+
+  # Some programs need SUID wrappers, can be configured further or are
+  # started in user sessions.
+  # programs.mtr.enable = true;
+  # programs.gnupg.agent = {
+  #   enable = true;
+  #   enableSSHSupport = true;
+  # };
+
+  # List services that you want to enable:
+
+  # Enable the OpenSSH daemon.
+  # services.openssh.enable = true;
+
+  # Open ports in the firewall.
+  # networking.firewall.allowedTCPPorts = [ ... ];
+  # networking.firewall.allowedUDPPorts = [ ... ];
+  # Or disable the firewall altogether.
+  # networking.firewall.enable = false;
+
+  # This value determines the NixOS release from which the default
+  # settings for stateful data, like file locations and database versions
+  # on your system were taken. It‘s perfectly fine and recommended to leave
+  # this value at the release version of the first install of this system.
+  # Before changing this value read the documentation for this option
+  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
+  system.stateVersion = "25.11"; # Did you read the comment?
+
+}
+</file>
+
+<file path="hosts/default/home.nix">
+{ config, pkgs, inputs, ... }:
+
+{
+  # Home Manager needs a bit of information about you and the paths it should
+  # manage.
+  home.username = "tobi";
+  home.homeDirectory = "/home/tobi";
+
+  # This value determines the Home Manager release that your configuration is
+  # compatible with. This helps avoid breakage when a new Home Manager release
+  # introduces backwards incompatible changes.
+  #
+  # You should not change this value, even if you update Home Manager. If you do
+  # want to update the value, then make sure to first check the Home Manager
+  # release notes.
+  home.stateVersion = "25.11"; # Please read the comment before changing.
+
+  # The home.packages option allows you to install Nix packages into your
+  # environment.
+  #home.packages = [
+    # # Adds the 'hello' command to your environment. It prints a friendly
+    # # "Hello, world!" when run.
+   # pkgs.hello
+
+
+    # # It is sometimes useful to fine-tune packages, for example, by applying
+    # # overrides. You can do that directly here, just don't forget the
+    # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
+    # # fonts?
+    # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
+
+    # # You can also create simple shell scripts directly inside your
+    # # configuration. For example, this adds a command 'my-hello' to your
+    # # environment:
+    # (pkgs.writeShellScriptBin "my-hello" ''
+    #   echo "Hello, ${config.home.username}!"
+    # '')
+# ];
+
+  # Home Manager is pretty good at managing dotfiles. The primary way to manage
+  # plain files is through 'home.file'.-fonts
+  home.file = {
+    # # Building this configuration will create a copy of 'dotfiles/screenrc' in
+    # # the Nix store. Activating the configuration will then make '~/.screenrc' a
+    # # symlink to the Nix store copy.
+    # ".screenrc".source = dotfiles/screenrc;
+
+    # # You can also set the file content immediately.
+    # ".gradle/gradle.properties".text = ''
+    #   org.gradle.console=verbose
+    #   org.gradle.daemon.idletimeout=3600000
+    # '';
+  };
+
+  # Home Manager can also manage your environment variables through
+  # 'home.sessionVariables'. These will be explicitly sourced when using a
+  # shell provided by Home Manager. If you don't want to manage your shell
+  # through Home Manager then you have to manually source 'hm-session-vars.sh'
+  # located at either
+  #
+  #  ~/.nix-profile/etc/profile.d/hm-session-vars.sh
+  #
+  # or
+  #
+  #  ~/.local/state/nix/profiles/profile/etc/profile.d/hm-session-vars.sh
+  #
+  # or
+  #  programs.fish.enable = true;
+  #  /etc/profiles/per-user/tobi/etc/profile.d/hm-session-vars.sh
+  #
+  home.sessionVariables = {
+    EDITOR = "nvim";
+  };
+
+  # Let Home Manager install and manage itself.
+  programs.home-manager.enable = true;
+
+
+
+  programs.btop = {
+	enable=true;
+	settings = {
+	  color_theme = "gruvbox_dark_v2";
+	  vim_keys = true;
+	};
+  };
+
+  programs.git = {
+    enable = true;
+    userName = "Tobias";
+    userEmail = "tobiaspucher@gmail.com";
+  };
+
+  programs.gh = {
+    enable = true;
+    gitCredentialHelper = {
+      enable = true;
+    };
+  };
+
+  #programs.steam = {
+  #  enable = true;
+  #  remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
+  #  dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
+  #  localNetworkGameTransfers.openFirewall = true; # Open ports in the firewall for Steam Local Network Game Transfers
+  #
+
+
+  #niri
+  xdg.configFile."niri/config.kdl".source = ./config.kdl;
+  programs.alacritty.enable = true; # Super+T in the default setting (terminal)
+  programs.fuzzel.enable = true; # Super+D in the default setting (app launcher)
+  programs.swaylock.enable = true; # Super+Alt+L in the default setting (screen locker)
+  programs.waybar.enable = true; # launch on startup in the default setting (bar)
+  services.mako.enable = true; # notification daemon
+  services.swayidle.enable = true; # idle management daemon
+  services.polkit-gnome.enable = true; # polkit
+
+
+  imports = [
+    inputs.nvf.homeManagerModules.default
+  ];
+
+  programs.nvf = {
+    enable = true;
+    enableManpages = true;  # optional but helpful
+  };
+
+  programs.direnv.enable = true;
+
+  home.packages = with pkgs; [
+   hello
+   direnv
+   nix-direnv
+   repomix
+   #<niri
+   swaybg # wallpaper
+   xwayland-satellite
+   #niri>
+  ];
+
+  programs.ghostty = {
+    enable = true;
+    package = if pkgs.stdenv.isDarwin then pkgs.ghostty-bin else pkgs.ghostty;
+
+    # Enable for whichever shell you plan to use!
+    enableBashIntegration = true;
+    enableFishIntegration = true;
+    enableZshIntegration = true;
+
+    settings = {
+      #theme = "Abernathy";
+      #theme = "Arthur";
+      theme = "Carbonfox";
+      background-opacity = "0.8";
+      background-blur = 20;
+      font-family = "Lilex Nerd Font Mono";
+    };
+  };
+
+
+  services.flameshot = {
+    enable = true;
+    settings = {
+      General = {
+        #<grim
+        useGrimAdapter = true;
+        # Stops warnings for using Grim
+        disabledGrimWarning = true;
+        #grim>
+
+        # More settings may be found on the Flameshot Github
+        # Save Path
+        savePath = "/home/user/Screenshots";
+        # Tray
+        disabledTrayIcon = true;
+        # Greeting message
+        showStartupLaunchMessage = false;
+        # Default file extension for screenshots (.png by default)
+        saveAsFileExtension = ".png";
+        # Desktop notifications
+        showDesktopNotification = true;
+        # Notification for cancelled screenshot
+        showAbortNotification = false;
+        # Whether to show the info panel in the center in GUI mode
+        showHelp = true;
+        # Whether to show the left side button in GUI mode
+        showSidePanelButton = true;
+
+
+        # Color Customization
+        uiColor = "#740096";
+        contrastUiColor = "#270032";
+        drawColor = "#ff0000";
+
+      };
+    };
+  };
+}
+</file>
+
+</files>

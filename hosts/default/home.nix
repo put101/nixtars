@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, inputs, ... }:
 
 {
   # Home Manager needs a bit of information about you and the paths it should
@@ -38,7 +38,7 @@
 # ];
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
-  # plain files is through 'home.file'.
+  # plain files is through 'home.file'.-fonts
   home.file = {
     # # Building this configuration will create a copy of 'dotfiles/screenrc' in
     # # the Nix store. Activating the configuration will then make '~/.screenrc' a
@@ -76,6 +76,7 @@
   programs.home-manager.enable = true;
 
 
+
   programs.btop = {
 	enable=true;
 	settings = {
@@ -86,8 +87,15 @@
 
   programs.git = {
     enable = true;
-    userName = "Tobias NixOS Lenovo";
+    userName = "Tobias";
     userEmail = "tobiaspucher@gmail.com";
+  };
+
+  programs.gh = {
+    enable = true;
+    gitCredentialHelper = {
+      enable = true;
+    };
   };
 
   #programs.steam = {
@@ -95,7 +103,28 @@
   #  remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
   #  dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
   #  localNetworkGameTransfers.openFirewall = true; # Open ports in the firewall for Steam Local Network Game Transfers
-  #};
+  #
+
+
+  #niri
+  xdg.configFile."niri/config.kdl".source = ./config.kdl;
+  programs.alacritty.enable = true; # Super+T in the default setting (terminal)
+  programs.fuzzel.enable = true; # Super+D in the default setting (app launcher)
+  programs.swaylock.enable = true; # Super+Alt+L in the default setting (screen locker)
+  programs.waybar.enable = true; # launch on startup in the default setting (bar)
+  services.mako.enable = true; # notification daemon
+  services.swayidle.enable = true; # idle management daemon
+  services.polkit-gnome.enable = true; # polkit
+
+
+  imports = [
+    inputs.nvf.homeManagerModules.default
+  ];
+
+  programs.nvf = {
+    enable = true;
+    enableManpages = true;  # optional but helpful
+  };
 
   programs.direnv.enable = true;
 
@@ -103,7 +132,32 @@
    hello
    direnv
    nix-direnv
+   repomix
+   #<niri
+   swaybg # wallpaper
+   xwayland-satellite
+   #niri>
   ];
+
+  programs.ghostty = {
+    enable = true;
+    package = if pkgs.stdenv.isDarwin then pkgs.ghostty-bin else pkgs.ghostty;
+
+    # Enable for whichever shell you plan to use!
+    enableBashIntegration = true;
+    enableFishIntegration = true;
+    enableZshIntegration = true;
+
+    settings = {
+      #theme = "Abernathy";
+      #theme = "Arthur";
+      theme = "Carbonfox";
+      background-opacity = "0.8";
+      background-blur = 20;
+      font-family = "Lilex Nerd Font Mono";
+    };
+  };
+
 
   services.flameshot = {
     enable = true;

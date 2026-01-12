@@ -88,6 +88,9 @@
   services.displayManager.sddm.enable = true;
   services.desktopManager.plasma6.enable = true;
 
+  # Add this line to force Niri selected by default
+  services.displayManager.defaultSession = "niri";
+
   # Configure keymap in X11
   services.xserver.xkb = {
     layout = "at";
@@ -113,6 +116,20 @@
     #media-session.enable = true;
   };
 
+  fonts = {
+    packages = with pkgs; [
+      noto-fonts
+      liberation_ttf
+      nerd-fonts.fira-code
+      nerd-fonts.droid-sans-mono
+      nerd-fonts.hack
+      nerd-fonts.lilex
+      nerd-fonts._0xproto
+      nerd-fonts.ubuntu
+    ];
+  };
+
+
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
 
@@ -120,7 +137,7 @@
   users.users.tobi = {
     isNormalUser = true;
     description = "tobi";
-    extraGroups = [ "networkmanager" "wheel" "docker" ];
+    extraGroups = [ "networkmanagercachix use nvf " "wheel" "docker" ];
     packages = with pkgs; [
       kdePackages.kate
       #  thunderbird
@@ -141,6 +158,21 @@
 
   programs.fish.enable = true;
 
+
+
+  # uv, numpy import error: libstdc++
+  programs.nix-ld.enable = true;
+  programs.nix-ld.libraries = with pkgs; [
+    (lib.getLib pkgs.stdenv.cc.cc)  # provides libstdc++.so.6 and libgcc_s.so.1
+    pkgs.zlib
+    pkgs.libffi
+    pkgs.openssl
+    pkgs.glibc
+  ];
+
+  #niri
+  programs.niri.enable = true;
+
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
   #nixpkgs.config.cudaSupport = true;
@@ -149,11 +181,11 @@
   # $ nix search wget
   environment.systemPackages = with pkgs; [
   #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    cachix
     wget
     jq
     lsof
     tree
-    ghostty
     gh
     docker
     docker-color-output
@@ -184,6 +216,9 @@
     grc
     #fish>
 
+    gemini-cli
+    tmux
+
     (pkgs.anki.withAddons [
       # Specify the anki-connect add-on and provide its configuration
       (pkgs.ankiAddons.anki-connect.withConfig {
@@ -212,8 +247,10 @@
     gcc
     gnumake
     pkg-config
-    lua
+    lua5_1
     luarocks
+    imagemagick
+    luaPackages.luarocks
     #datanvim>
 
  ];

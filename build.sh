@@ -1,1 +1,1 @@
-nixos-rebuild switch --flake /etc/nixos#nixtars
+nixos-rebuild switch --flake .#nixtars
