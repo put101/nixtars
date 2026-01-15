@@ -8,6 +8,24 @@ sudo nixos-rebuild switch --flake /home/tobi/#nixtars
 
 # Issues and TODOs
 
+- 
+  Summary of Findings:
+   1. Niri Config Error: You have a syntax error in ~/nixtars/hosts/default/config.kdl on
+      line 319 (Mod+? is missing an action block).
+   2. Networking & Signal Issues: Your Niri session lacks a running Secret Service (Keyring).
+      KDE Plasma provides this automatically (kwallet), but Niri does not. This prevents
+      NetworkManager from saving Wi-Fi passwords and Signal from accessing its encryption
+      keys.
+   3. Reference Comparison: Your friend 'not-matthias' explicitly enables gnome-keyring and
+      polkit in their Niri module, which is missing from your configuration.
+
+  Proposed Plan:
+   1. Fix Niri Config: Remove the broken line in config.kdl.
+   2. Enable Keyring: Add services.gnome.gnome-keyring.enable = true; to your
+      configuration.nix to handle passwords and secrets system-wide.
+      
+
+
 - [tobi@nixtars:~]$ niri
 2026-01-15T15:15:14.296571Z  INFO niri: starting version 25.11 (Nixpkgs)
 2026-01-15T15:15:14.353075Z  WARN niri:   × error loading config
