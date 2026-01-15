@@ -36,12 +36,18 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    stylix.url = "github:danth/stylix";
+
     #niri
     niri-session-manager.url = "github:MTeaHead/niri-session-manager";
 
 
     #inputs.zotero-nix.url = "github:camillemndn/zotero-nix";
 
+    openai-codex = {
+      url = "github:GutMutCode/openai-codex-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
   };
 
@@ -56,32 +62,5 @@
 	  #inputs.nix-pia-vpn.nixosModules.default
       ];
     };
-
-    #niri
-    nixosConfigurations = {
-      yourHost = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
-        modules = [
-          # This is not a complete NixOS configuration; reference your normal configuration here.
-          # Import the module
-          niri-session-manager.nixosModules.niri-session-manager
-
-          #<zotero
-          #environment.systemPackages = [ zotero-nix.packages.${system}.default ];
-          #zotero>
-
-          ({
-            # Enable the service
-            services.niri-session-manager.enable = true;
-            # Optional: Configure the service
-            services.niri-session-manager.settings = {
-              save-interval = 30;  # Save every 30 minutes
-              max-backup-count = 3;  # Keep 3 most recent backups
-            };
-          })
-        ];
-      };
-    };
-
   };
 }

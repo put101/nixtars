@@ -40,11 +40,20 @@ The content is organized as follows:
 </file_summary>
 
 <directory_structure>
+.direnv/
+  bin/
+    nix-direnv-reload
 hosts/
   default/
+    waybar/
+      default.nix
+      style.css
+    .configuration.nix.kate-swp
     config.kdl
     configuration.nix
     home.nix
+    nvf.nix
+    stylix.nix
 secrets/
   ca.rsa.4096.crt
   pia.env
@@ -53,11 +62,760 @@ build.sh
 flake.lock
 flake.nix
 readme.md
+session_diagnosis.md
 summary.txt
+wallpaper.png
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path=".direnv/bin/nix-direnv-reload">
+#!/usr/bin/env bash
+set -e
+if [[ ! -d "/home/tobi/nixtars" ]]; then
+  echo "Cannot find source directory; Did you move it?"
+  echo "(Looking for "/home/tobi/nixtars")"
+  echo 'Cannot force reload with this script - use "direnv reload" manually and then try again'
+  exit 1
+fi
+
+# rebuild the cache forcefully
+_nix_direnv_force_reload=1 direnv exec "/home/tobi/nixtars" true
+
+# Update the mtime for .envrc.
+# This will cause direnv to reload again - but without re-building.
+touch "/home/tobi/nixtars/.envrc"
+
+# Also update the timestamp of whatever profile_rc we have.
+# This makes sure that we know we are up to date.
+touch -r "/home/tobi/nixtars/.envrc" "/home/tobi/nixtars/.direnv"/*.rc
+</file>
+
+<file path="hosts/default/waybar/default.nix">
+{ pkgs, lib, config, ... }:
+
+{
+  # Disable Stylix styling for Waybar so we can use our own custom config
+  stylix.targets.waybar.enable = false;
+
+  programs.waybar = {
+    enable = true;
+    # Use mkForce to override Stylix's attempt to inject styles
+    style = lib.mkForce (builtins.readFile ./style.css);
+    settings = {
+      mainBar = {
+        layer = "top";
+        position = "top";
+        height = 36;
+        margin-top = 6;
+        margin-left = 10;
+        margin-right = 10;
+        
+        modules-left = [ "niri/workspaces" "niri/window" ];
+        modules-center = [ "clock" ];
+        modules-right = [ "pulseaudio" "network" "battery" "tray" ];
+
+        "niri/workspaces" = {
+          format = "{icon}";
+          format-icons = {
+            active = "";
+            default = "";
+          };
+        };
+
+        "niri/window" = {
+            format = "{{}}";
+            rewrite = {
+                "(.*) - Mozilla Firefox" = "Firefox";
+                "(.*) - Visual Studio Code" = "VS Code";
+                "" = "Empty";
+            };
+        };
+
+        "clock" = {
+          format = "{%H:%M    %d/%m}";
+          tooltip-format = "<big>{:%Y %B}</big>\n<tt><small>{calendar}</small></tt>";
+        };
+
+        "pulseaudio" = {
+            format = "{icon} {volume}%";
+            format-bluetooth = "{icon} {volume}%";
+            format-muted = " Muted";
+            format-icons = {
+                headphone = "";
+                hands-free = "";
+                headset = "";
+                phone = "";
+                portable = "";
+                car = "";
+                default = ["" ""];
+            };
+            scroll-step = 1;
+            on-click = "pavucontrol";
+        };
+
+        "network" = {
+            format-wifi = "  {signalStrength}%";
+            format-ethernet = " Connected";
+            tooltip-format = "{essid} - {ifname} via {gwaddr}";
+            format-linked = "{ifname} (No IP)";
+            format-disconnected = "⚠ Disconnected";
+            format-alt = "{ifname}:{essid} {ipaddr}/{cidr}";
+        };
+
+        "battery" = {
+            states = {
+                good = 95;
+                warning = 30;
+                critical = 15;
+            };
+            format = "{icon} {capacity}%";
+            format-charging = " {capacity}%";
+            format-plugged = " {capacity}%";
+            format-alt = "{time} {icon}";
+            format-icons = ["" "" "" "" ""];
+        };
+
+        "tray" = {
+            icon-size = 18;
+            spacing = 10;
+        };
+      };
+    };
+  };
+}
+</file>
+
+<file path="hosts/default/waybar/style.css">
+@define-color base00 #1e1e2e;
+@define-color base01 #181825;
+@define-color base02 #313244;
+@define-color base03 #45475a;
+@define-color base04 #585b70;
+@define-color base05 #cdd6f4;
+@define-color base06 #f5e0dc;
+@define-color base07 #b4befe;
+@define-color base08 #f38ba8;
+@define-color base09 #fab387;
+@define-color base0A #f9e2af;
+@define-color base0B #a6e3a1;
+@define-color base0C #94e2d5;
+@define-color base0D #89b4fa;
+@define-color base0E #cba6f7;
+@define-color base0F #f2cdcd;
+
+* {
+    border: none;
+    border-radius: 0;
+    font-family: "JetBrainsMono Nerd Font Mono", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: transparent;
+    color: @base05;
+}
+
+/* Tooltip */
+tooltip {
+    background: @base00;
+    border: 1px solid @base0D;
+    border-radius: 10px;
+}
+
+tooltip label {
+    color: @base05;
+}
+
+/* Modules (Pills) */
+#workspaces,
+#clock,
+#tray,
+#battery,
+#network,
+#pulseaudio,
+#custom-power,
+#custom-niri-window {
+    background: @base00;
+    color: @base05;
+    padding: 6px 14px;
+    margin: 4px 3px;
+    border-radius: 15px;
+    border: 1px solid @base02;
+    box-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+}
+
+/* Workspaces */
+#workspaces button {
+    padding: 0 5px;
+    background: transparent;
+    color: @base05;
+    border-radius: 10px;
+    margin: 0 2px;
+}
+
+#workspaces button:hover {
+    background: @base02;
+}
+
+#workspaces button.active {
+    background: @base0D;
+    color: @base00;
+}
+
+#workspaces button.focused {
+    background: @base0D;
+    color: @base00;
+}
+
+/* Individual Module Tweaks */
+#clock {
+    font-weight: bold;
+    color: @base0D;
+}
+
+#battery.charging {
+    color: @base0B;
+}
+
+#battery.warning:not(.charging) {
+    color: @base09;
+}
+
+#battery.critical:not(.charging) {
+    color: @base08;
+    animation-name: blink;
+    animation-duration: 0.5s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+@keyframes blink {
+    to {
+        background-color: @base08;
+        color: @base00;
+    }
+}
+
+#network.disconnected {
+    color: @base08;
+}
+
+#pulseaudio.muted {
+    color: @base04;
+}
+
+#custom-power {
+    color: @base08;
+    padding-right: 18px;
+}
+</file>
+
+<file path="hosts/default/nvf.nix">
+{ config, pkgs, lib, ... }:
+let
+  isMaximal = true;
+in
+{
+  programs.nvf = {
+    enable = true;
+    enableManpages = true;
+
+    settings.vim = {
+      viAlias = true;
+      vimAlias = true;
+
+      debugMode = {
+        enable = false;
+        level = 16;
+        logFile = "/tmp/nvim.log";
+      };
+
+      spellcheck = {
+        enable = true;
+        programmingWordlist.enable = isMaximal;
+      };
+
+      lsp = {
+        enable = true;
+        formatOnSave = true;
+        lightbulb.enable = true;
+        lspsaga.enable = false;
+        trouble.enable = true;
+        lspSignature.enable = !isMaximal; # conflicts with blink/otter in maximal
+        otter-nvim.enable = isMaximal;
+        nvim-docs-view.enable = isMaximal;
+      };
+
+      debugger = {
+        nvim-dap = {
+          enable = true;
+          ui.enable = true;
+        };
+      };
+
+      languages = {
+        enableFormat = true;
+        enableTreesitter = true;
+        enableExtraDiagnostics = true;
+
+        # Languages enabled in maximal config
+        nix.enable = true;
+        markdown.enable = true;
+        bash.enable = isMaximal;
+        clang.enable = isMaximal;
+        css.enable = isMaximal;
+        html.enable = isMaximal;
+        json.enable = isMaximal;
+        sql.enable = isMaximal;
+        java.enable = isMaximal;
+        kotlin.enable = isMaximal;
+        ts.enable = isMaximal;
+        go.enable = isMaximal;
+        lua.enable = isMaximal;
+        zig.enable = isMaximal;
+        python.enable = isMaximal;
+        typst.enable = isMaximal;
+        rust = {
+          enable = isMaximal;
+          crates.enable = isMaximal;
+        };
+        toml.enable = isMaximal;
+      };
+
+      ui = {
+        borders.enable = true;
+        noice.enable = true;
+        colorizer.enable = true;
+        modes-nvim.enable = false; # Often conflicts or is annoying
+        illuminate.enable = true;
+        breadcrumbs.enable = true;
+        smartcolumn.enable = true;
+        fastaction.enable = true;
+      };
+
+      statusline.lualine.enable = true;
+      telescope.enable = true;
+      autocomplete.nvim-cmp.enable = true;
+      
+      # Helper for Iron.nvim (Python REPL)
+      # This is NOT part of the official maximal config yet, but essential for your request.
+      startPlugins = [ pkgs.vimPlugins.iron-nvim ];
+      luaConfigRC.iron = ''
+        local iron = require("iron.core")
+        local view = require("iron.view")
+        local common = require("iron.fts.common")
+
+        iron.setup({
+          config = {
+            scratch_repl = true,
+            repl_definition = {
+              python = {
+                command = {"${pkgs.python3}/bin/python3"},
+                format = common.bracketed_paste_python
+              }
+            },
+            repl_open_cmd = view.split.vertical.botright(0.4)
+          },
+          keymaps = {
+            send_motion = "<space>sc",
+            visual_send = "<space>sc",
+            send_file = "<space>sf",
+            send_line = "<space>sl",
+            interrupt = "<space>si",
+            exit = "<space>sq",
+            clear = "<space>cl",
+          },
+          highlight = { italic = true },
+          ignore_blank_lines = true, 
+        })
+      '';
+    };
+  };
+}
+</file>
+
+<file path="hosts/default/stylix.nix">
+{ pkgs, inputs, ... }: {
+  imports = [ inputs.stylix.nixosModules.stylix ];
+
+  stylix = {
+    enable = true;
+    base16Scheme = "${pkgs.base16-schemes}/share/themes/catppuccin-mocha.yaml";
+    image = ../../wallpaper.png;
+    polarity = "dark";
+
+    cursor = {
+      package = pkgs.bibata-cursors;
+      name = "Bibata-Modern-Classic";
+      size = 24;
+    };
+
+    fonts = {
+      monospace = {
+        package = pkgs.nerd-fonts.jetbrains-mono;
+        name = "JetBrainsMono Nerd Font Mono";
+      };
+      sansSerif = {
+        package = pkgs.dejavu_fonts;
+        name = "DejaVu Sans";
+      };
+      serif = {
+        package = pkgs.dejavu_fonts;
+        name = "DejaVu Serif";
+      };
+      sizes = {
+        applications = 12;
+        terminal = 12;
+        desktop = 10;
+        popups = 10;
+      };
+    };
+
+    # Transparency/Opacity settings
+    opacity = {
+      applications = 1.0;
+      terminal = 0.9;
+      desktop = 1.0;
+      popups = 1.0;
+    };
+  };
+}
+</file>
+
+<file path="secrets/ca.rsa.4096.crt">
+-----BEGIN CERTIFICATE-----
+MIIHqzCCBZOgAwIBAgIJAJ0u+vODZJntMA0GCSqGSIb3DQEBDQUAMIHoMQswCQYD
+VQQGEwJVUzELMAkGA1UECBMCQ0ExEzARBgNVBAcTCkxvc0FuZ2VsZXMxIDAeBgNV
+BAoTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMSAwHgYDVQQLExdQcml2YXRlIElu
+dGVybmV0IEFjY2VzczEgMB4GA1UEAxMXUHJpdmF0ZSBJbnRlcm5ldCBBY2Nlc3Mx
+IDAeBgNVBCkTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMS8wLQYJKoZIhvcNAQkB
+FiBzZWN1cmVAcHJpdmF0ZWludGVybmV0YWNjZXNzLmNvbTAeFw0xNDA0MTcxNzQw
+MzNaFw0zNDA0MTIxNzQwMzNaMIHoMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0Ex
+EzARBgNVBAcTCkxvc0FuZ2VsZXMxIDAeBgNVBAoTF1ByaXZhdGUgSW50ZXJuZXQg
+QWNjZXNzMSAwHgYDVQQLExdQcml2YXRlIEludGVybmV0IEFjY2VzczEgMB4GA1UE
+AxMXUHJpdmF0ZSBJbnRlcm5ldCBBY2Nlc3MxIDAeBgNVBCkTF1ByaXZhdGUgSW50
+ZXJuZXQgQWNjZXNzMS8wLQYJKoZIhvcNAQkBFiBzZWN1cmVAcHJpdmF0ZWludGVy
+bmV0YWNjZXNzLmNvbTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBALVk
+hjumaqBbL8aSgj6xbX1QPTfTd1qHsAZd2B97m8Vw31c/2yQgZNf5qZY0+jOIHULN
+De4R9TIvyBEbvnAg/OkPw8n/+ScgYOeH876VUXzjLDBnDb8DLr/+w9oVsuDeFJ9K
+V2UFM1OYX0SnkHnrYAN2QLF98ESK4NCSU01h5zkcgmQ+qKSfA9Ny0/UpsKPBFqsQ
+25NvjDWFhCpeqCHKUJ4Be27CDbSl7lAkBuHMPHJs8f8xPgAbHRXZOxVCpayZ2SND
+fCwsnGWpWFoMGvdMbygngCn6jA/W1VSFOlRlfLuuGe7QFfDwA0jaLCxuWt/BgZyl
+p7tAzYKR8lnWmtUCPm4+BtjyVDYtDCiGBD9Z4P13RFWvJHw5aapx/5W/CuvVyI7p
+Kwvc2IT+KPxCUhH1XI8ca5RN3C9NoPJJf6qpg4g0rJH3aaWkoMRrYvQ+5PXXYUzj
+tRHImghRGd/ydERYoAZXuGSbPkm9Y/p2X8unLcW+F0xpJD98+ZI+tzSsI99Zs5wi
+jSUGYr9/j18KHFTMQ8n+1jauc5bCCegN27dPeKXNSZ5riXFL2XX6BkY68y58UaNz
+meGMiUL9BOV1iV+PMb7B7PYs7oFLjAhh0EdyvfHkrh/ZV9BEhtFa7yXp8XR0J6vz
+1YV9R6DYJmLjOEbhU8N0gc3tZm4Qz39lIIG6w3FDAgMBAAGjggFUMIIBUDAdBgNV
+HQ4EFgQUrsRtyWJftjpdRM0+925Y6Cl08SUwggEfBgNVHSMEggEWMIIBEoAUrsRt
+yWJftjpdRM0+925Y6Cl08SWhge6kgeswgegxCzAJBgNVBAYTAlVTMQswCQYDVQQI
+EwJDQTETMBEGA1UEBxMKTG9zQW5nZWxlczEgMB4GA1UEChMXUHJpdmF0ZSBJbnRl
+cm5ldCBBY2Nlc3MxIDAeBgNVBAsTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMSAw
+HgYDVQQDExdQcml2YXRlIEludGVybmV0IEFjY2VzczEgMB4GA1UEKRMXUHJpdmF0
+ZSBJbnRlcm5ldCBBY2Nlc3MxLzAtBgkqhkiG9w0BCQEWIHNlY3VyZUBwcml2YXRl
+aW50ZXJuZXRhY2Nlc3MuY29tggkAnS7684Nkme0wDAYDVR0TBAUwAwEB/zANBgkq
+hkiG9w0BAQ0FAAOCAgEAJsfhsPk3r8kLXLxY+v+vHzbr4ufNtqnL9/1Uuf8NrsCt
+pXAoyZ0YqfbkWx3NHTZ7OE9ZRhdMP/RqHQE1p4N4Sa1nZKhTKasV6KhHDqSCt/dv
+Em89xWm2MVA7nyzQxVlHa9AkcBaemcXEiyT19XdpiXOP4Vhs+J1R5m8zQOxZlV1G
+tF9vsXmJqWZpOVPmZ8f35BCsYPvv4yMewnrtAC8PFEK/bOPeYcKN50bol22QYaZu
+LfpkHfNiFTnfMh8sl/ablPyNY7DUNiP5DRcMdIwmfGQxR5WEQoHL3yPJ42LkB5zs
+6jIm26DGNXfwura/mi105+ENH1CaROtRYwkiHb08U6qLXXJz80mWJkT90nr8Asj3
+5xN2cUppg74nG3YVav/38P48T56hG1NHbYF5uOCske19F6wi9maUoto/3vEr0rnX
+JUp2KODmKdvBI7co245lHBABWikk8VfejQSlCtDBXn644ZMtAdoxKNfR2WTFVEwJ
+iyd1Fzx0yujuiXDROLhISLQDRjVVAvawrAtLZWYK31bY7KlezPlQnl/D9Asxe85l
+8jO5+0LdJ6VyOs/Hd4w52alDW/MFySDZSfQHMTIc30hLBJ8OnCEIvluVQQ2UQvoW
++no177N9L2Y+M9TcTA62ZyMXShHQGeh20rb4kK8f+iFX8NxtdHVSkxMEFSfDDyQ=
+-----END CERTIFICATE-----
+</file>
+
+<file path="secrets/pia.env">
+PIA_USER=p0060776
+PIA_PASS=G3HF3GZpLR
+PIA_AUTOCONNECT=true
+PIA_PROTOCOL=wireguard
+</file>
+
+<file path=".gitignore">
+hardware-configuration.nix
+</file>
+
+<file path="session_diagnosis.md">
+# Session Diagnosis: Niri & NixOS Setup
+
+## 1. Niri Configuration Error (Fixed)
+**Issue:** `niri` command reported errors due to syntax error in config.
+**Fix:** Removed dangling `Mod+?` in `config.kdl`.
+**Status:** **Applied**.
+
+## 2. Networking & Wallet Issues (Fixed)
+**Issue:** Wi-Fi forgot passwords, Signal crashed.
+**Fix:** Enabled `gnome-keyring` and `polkit` in `configuration.nix`.
+**Status:** **Applied**.
+
+## 3. Visual Overhaul (In Progress)
+**Objective:** Replace default "blocky" look with a "Pro" Catppuccin-themed setup (Stylix + Custom Waybar).
+
+### Action Log
+1.  **Global Theming (Stylix):**
+    *   **Created:** `nixtars/hosts/default/stylix.nix`
+        *   **Scheme:** Catppuccin Mocha (Dark).
+        *   **Wallpaper:** `nixtars/wallpaper.png` (Forest Landscape).
+        *   **Fonts:** JetBrains Mono (Mono) & DejaVu Sans (UI).
+    *   **Modified:** `nixtars/hosts/default/configuration.nix`
+        *   Imported `./stylix.nix`.
+        *   Added `inputs.stylix.nixosModules.stylix` to imports.
+
+2.  **Custom Waybar:**
+    *   **Created:** `nixtars/hosts/default/waybar/default.nix` & `style.css`.
+        *   **Style:** Transparent background, floating pill-shaped modules, Catppuccin colors.
+        *   **Modules:** Niri Workspaces, Clock, PulseAudio, Network, Battery, Tray.
+    *   **Modified:** `nixtars/hosts/default/home.nix`
+        *   Removed simple `programs.waybar.enable = true`.
+        *   Imported `./waybar/default.nix`.
+
+### Next Steps for User
+To apply these visual changes:
+1.  Run the build script:
+    ```bash
+    cd ~/nixtars
+    ./build.sh
+    ```
+2.  Log out and log back in to see the new theme, wallpaper, and Waybar.
+
+## 4. Signal & Keyring Backend Mismatch (Fixed?)
+
+**Symptom:** Signal crashes immediately on startup.
+**Root Cause:** Niri session was not updating the DBus/Systemd environment, so `gnome-keyring` (and other user services) didn't know how to communicate with the session.
+
+**Fix Applied (Session 2):**
+1.  **Niri Autostart:** Added `dbus-update-activation-environment` and `systemctl --user import-environment` to `config.kdl` to properly initialize the session for services like `gnome-keyring`.
+2.  **System Tray:** Added `networkmanagerapplet` (nm-applet) to `home.nix` and `config.kdl` to provide the Wi-Fi tray icon.
+3.  **Clipboard/Screenshots:** Added `wl-clipboard` and `slurp` to `home.nix`.
+
+**Status:** **Applied**. Waiting for rebuild and re-login to verify.
+
+**What We Have Done (System Level):**
+*   Updated `configuration.nix` to include proper `xdg-desktop-portal` configuration (wlr, gtk, gnome) to ensure standard secret service communication works in Wayland.
+*   Explicitly enabled `gnome-keyring` integration in PAM and Polkit.
+*   Added `libsecret` and `signal-desktop` (explicitly) to system packages.
+
+## 5. Next Steps
+1.  **Build:** Run `./build.sh` to apply all changes.
+2.  **Re-login:** Exit Niri and start it again.
+3.  **Verify:**
+    *   Check if `nm-applet` appears in the tray (top right).
+    *   Check if Signal starts without crashing.
+    *   Check if `Print` key takes a screenshot (check `~/Pictures/Screenshots`).
+
+## 6. Python REPL in Neovim (NVF)
+**Objective:** Enable `iron.nvim` for Python interactive development.
+**Action:**
+*   Created `nixtars/hosts/default/nvf.nix`.
+*   Enabled `languages.python` (LSP, Formatting, Treesitter).
+*   Added `iron.nvim` to `startPlugins`.
+*   Configured `iron.nvim` with:
+    *   **Command:** `python3` (from Nix store).
+    *   **Layout:** Bottom split (40%).
+    *   **Keymaps:**
+        *   `<Space>sl`: Send Line
+        *   `<Space>sf`: Send File
+        *   `<Space>sc`: Send Selection/Motion
+</file>
+
+<file path="summary.txt">
+{
+  "nodes": {
+    "home-manager": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1758593331,
+        "narHash": "sha256-p+904PfmINyekyA/LieX3IYGsiFtExC00v5gSYfJtpM=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "9a2dc0efbc569ce9352a6ffb8e8ec8dbc098e142",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1758427187,
+        "narHash": "sha256-pHpxZ/IyCwoTQPtFIAG2QaxuSm8jWzrzBGjwQZIttJc=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "554be6495561ff07b6c724047bdd7e0716aa7b46",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "home-manager": "home-manager",
+        "nixpkgs": "nixpkgs"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
+{
+  description = "Nixos config flake";
+  nixConfig = { 
+  	extra-substituters = [
+		"https://cuda-maintainers.cachix.org"
+	];
+	extra-trusted-public-keys = [
+		"cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
+	];
+  };
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    #nix-pia-vpn = {
+     #url = "github:rcambrj/nix-pia-vpn";
+     #inputs.nixpkgs.follows = "nixpkgs";
+    #};
+  };
+
+  outputs = { self, nixpkgs, ... }@inputs: {
+    # use "nixos", or your hostname as the name of the configuration
+    # it's a better practice than "default" shown in the video
+    nixosConfigurations.nixtars = nixpkgs.lib.nixosSystem {
+      specialArgs = {inherit inputs;};
+      modules = [
+        ./hosts/default/configuration.nix
+        inputs.home-manager.nixosModules.default
+	  #inputs.nix-pia-vpn.nixosModules.default
+      ];
+    };
+  };
+}
+
+# Commands: 
+
+```sh
+sudo nixos-rebuild switch --flake /etc/nixos/#default
+```
+nixos-rebuild switch --flake .#nixtars
+{
+  "nodes": {
+    "home-manager": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1758593331,
+        "narHash": "sha256-p+904PfmINyekyA/LieX3IYGsiFtExC00v5gSYfJtpM=",
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "rev": "9a2dc0efbc569ce9352a6ffb8e8ec8dbc098e142",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "home-manager",
+        "type": "github"
+      }
+    },
+    "nixpkgs": {
+      "locked": {
+        "lastModified": 1758427187,
+        "narHash": "sha256-pHpxZ/IyCwoTQPtFIAG2QaxuSm8jWzrzBGjwQZIttJc=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "554be6495561ff07b6c724047bdd7e0716aa7b46",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "root": {
+      "inputs": {
+        "home-manager": "home-manager",
+        "nixpkgs": "nixpkgs"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}
+{
+  description = "Nixos config flake";
+  nixConfig = { 
+  	extra-substituters = [
+	  "https://cache.nixos.org"
+          "https://nix-community.cachix.org"
+	  "https://cuda-maintainers.cachix.org"
+	];
+	extra-trusted-public-keys = [
+	      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+		"cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
+	];
+  };
+
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    #nix-pia-vpn = {
+     #url = "github:rcambrj/nix-pia-vpn";
+     #inputs.nixpkgs.follows = "nixpkgs";
+    #};
+  };
+
+  outputs = { self, nixpkgs, ... }@inputs: {
+    # use "nixos", or your hostname as the name of the configuration
+    # it's a better practice than "default" shown in the video
+    nixosConfigurations.nixtars = nixpkgs.lib.nixosSystem {
+      specialArgs = {inherit inputs;};
+      modules = [
+        ./hosts/default/configuration.nix
+        inputs.home-manager.nixosModules.default
+	  #inputs.nix-pia-vpn.nixosModules.default
+      ];
+    };
+  };
+}
+
+# Commands: 
+
+```sh
+sudo nixos-rebuild switch --flake /etc/nixos/#default
+```
+</file>
 
 <file path="hosts/default/config.kdl">
 // This config is in the KDL format: https://kdl.dev
@@ -75,8 +833,8 @@ input {
             // For more information, see xkeyboard-config(7).
 
             // For example:
-            // layout "us,ru"
-            // options "grp:win_space_toggle,compose:ralt,ctrl:nocaps"
+            layout "de,us"
+            options "grp:win_space_toggle,compose:ralt,ctrl:nocaps"
 
             // If this section is empty, niri will fetch xkb settings
             // from org.freedesktop.locale1. You can control these using
@@ -221,7 +979,7 @@ layout {
         // off
 
         // How many logical pixels the ring extends out from the windows.
-        width 4
+        width 2
 
         // Colors can be set in a variety of ways:
         // - CSS named colors: "red"
@@ -259,7 +1017,7 @@ layout {
         // If you enable the border, you probably want to disable the focus ring.
         off
 
-        width 4
+        width 2
         active-color "#ffc87f"
         inactive-color "#505050"
 
@@ -331,6 +1089,13 @@ layout {
 
 // This line starts waybar, a commonly used bar for Wayland compositors.
 spawn-at-startup "waybar"
+
+// Start system tray for network
+spawn-at-startup "nm-applet" "--indicator"
+
+// Essential environment updates for systemd services (Keyring, Polkit, Mako)
+spawn-at-startup "dbus-update-activation-environment" "--systemd" "WAYLAND_DISPLAY" "XDG_CURRENT_DESKTOP"
+spawn-at-startup "systemctl" "--user" "import-environment" "WAYLAND_DISPLAY" "XDG_CURRENT_DESKTOP"
 
 // To run a shell command (with variables, pipes, etc.), use spawn-sh-at-startup:
 // spawn-sh-at-startup "qs -c ~/source/qs/MyAwesomeShell"
@@ -422,7 +1187,6 @@ binds {
     // Mod-Shift-/, which is usually the same as Mod-?,
     // shows a list of important hotkeys.
     Mod+Shift+Slash { show-hotkey-overlay; }
-    Mod+?
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
     Mod+T hotkey-overlay-title="Open a Terminal: alacritty" { spawn "alacritty"; }
@@ -678,63 +1442,6 @@ binds {
 }
 </file>
 
-<file path="secrets/ca.rsa.4096.crt">
------BEGIN CERTIFICATE-----
-MIIHqzCCBZOgAwIBAgIJAJ0u+vODZJntMA0GCSqGSIb3DQEBDQUAMIHoMQswCQYD
-VQQGEwJVUzELMAkGA1UECBMCQ0ExEzARBgNVBAcTCkxvc0FuZ2VsZXMxIDAeBgNV
-BAoTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMSAwHgYDVQQLExdQcml2YXRlIElu
-dGVybmV0IEFjY2VzczEgMB4GA1UEAxMXUHJpdmF0ZSBJbnRlcm5ldCBBY2Nlc3Mx
-IDAeBgNVBCkTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMS8wLQYJKoZIhvcNAQkB
-FiBzZWN1cmVAcHJpdmF0ZWludGVybmV0YWNjZXNzLmNvbTAeFw0xNDA0MTcxNzQw
-MzNaFw0zNDA0MTIxNzQwMzNaMIHoMQswCQYDVQQGEwJVUzELMAkGA1UECBMCQ0Ex
-EzARBgNVBAcTCkxvc0FuZ2VsZXMxIDAeBgNVBAoTF1ByaXZhdGUgSW50ZXJuZXQg
-QWNjZXNzMSAwHgYDVQQLExdQcml2YXRlIEludGVybmV0IEFjY2VzczEgMB4GA1UE
-AxMXUHJpdmF0ZSBJbnRlcm5ldCBBY2Nlc3MxIDAeBgNVBCkTF1ByaXZhdGUgSW50
-ZXJuZXQgQWNjZXNzMS8wLQYJKoZIhvcNAQkBFiBzZWN1cmVAcHJpdmF0ZWludGVy
-bmV0YWNjZXNzLmNvbTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBALVk
-hjumaqBbL8aSgj6xbX1QPTfTd1qHsAZd2B97m8Vw31c/2yQgZNf5qZY0+jOIHULN
-De4R9TIvyBEbvnAg/OkPw8n/+ScgYOeH876VUXzjLDBnDb8DLr/+w9oVsuDeFJ9K
-V2UFM1OYX0SnkHnrYAN2QLF98ESK4NCSU01h5zkcgmQ+qKSfA9Ny0/UpsKPBFqsQ
-25NvjDWFhCpeqCHKUJ4Be27CDbSl7lAkBuHMPHJs8f8xPgAbHRXZOxVCpayZ2SND
-fCwsnGWpWFoMGvdMbygngCn6jA/W1VSFOlRlfLuuGe7QFfDwA0jaLCxuWt/BgZyl
-p7tAzYKR8lnWmtUCPm4+BtjyVDYtDCiGBD9Z4P13RFWvJHw5aapx/5W/CuvVyI7p
-Kwvc2IT+KPxCUhH1XI8ca5RN3C9NoPJJf6qpg4g0rJH3aaWkoMRrYvQ+5PXXYUzj
-tRHImghRGd/ydERYoAZXuGSbPkm9Y/p2X8unLcW+F0xpJD98+ZI+tzSsI99Zs5wi
-jSUGYr9/j18KHFTMQ8n+1jauc5bCCegN27dPeKXNSZ5riXFL2XX6BkY68y58UaNz
-meGMiUL9BOV1iV+PMb7B7PYs7oFLjAhh0EdyvfHkrh/ZV9BEhtFa7yXp8XR0J6vz
-1YV9R6DYJmLjOEbhU8N0gc3tZm4Qz39lIIG6w3FDAgMBAAGjggFUMIIBUDAdBgNV
-HQ4EFgQUrsRtyWJftjpdRM0+925Y6Cl08SUwggEfBgNVHSMEggEWMIIBEoAUrsRt
-yWJftjpdRM0+925Y6Cl08SWhge6kgeswgegxCzAJBgNVBAYTAlVTMQswCQYDVQQI
-EwJDQTETMBEGA1UEBxMKTG9zQW5nZWxlczEgMB4GA1UEChMXUHJpdmF0ZSBJbnRl
-cm5ldCBBY2Nlc3MxIDAeBgNVBAsTF1ByaXZhdGUgSW50ZXJuZXQgQWNjZXNzMSAw
-HgYDVQQDExdQcml2YXRlIEludGVybmV0IEFjY2VzczEgMB4GA1UEKRMXUHJpdmF0
-ZSBJbnRlcm5ldCBBY2Nlc3MxLzAtBgkqhkiG9w0BCQEWIHNlY3VyZUBwcml2YXRl
-aW50ZXJuZXRhY2Nlc3MuY29tggkAnS7684Nkme0wDAYDVR0TBAUwAwEB/zANBgkq
-hkiG9w0BAQ0FAAOCAgEAJsfhsPk3r8kLXLxY+v+vHzbr4ufNtqnL9/1Uuf8NrsCt
-pXAoyZ0YqfbkWx3NHTZ7OE9ZRhdMP/RqHQE1p4N4Sa1nZKhTKasV6KhHDqSCt/dv
-Em89xWm2MVA7nyzQxVlHa9AkcBaemcXEiyT19XdpiXOP4Vhs+J1R5m8zQOxZlV1G
-tF9vsXmJqWZpOVPmZ8f35BCsYPvv4yMewnrtAC8PFEK/bOPeYcKN50bol22QYaZu
-LfpkHfNiFTnfMh8sl/ablPyNY7DUNiP5DRcMdIwmfGQxR5WEQoHL3yPJ42LkB5zs
-6jIm26DGNXfwura/mi105+ENH1CaROtRYwkiHb08U6qLXXJz80mWJkT90nr8Asj3
-5xN2cUppg74nG3YVav/38P48T56hG1NHbYF5uOCske19F6wi9maUoto/3vEr0rnX
-JUp2KODmKdvBI7co245lHBABWikk8VfejQSlCtDBXn644ZMtAdoxKNfR2WTFVEwJ
-iyd1Fzx0yujuiXDROLhISLQDRjVVAvawrAtLZWYK31bY7KlezPlQnl/D9Asxe85l
-8jO5+0LdJ6VyOs/Hd4w52alDW/MFySDZSfQHMTIc30hLBJ8OnCEIvluVQQ2UQvoW
-+no177N9L2Y+M9TcTA62ZyMXShHQGeh20rb4kK8f+iFX8NxtdHVSkxMEFSfDDyQ=
------END CERTIFICATE-----
-</file>
-
-<file path="secrets/pia.env">
-PIA_USER=p0060776
-PIA_PASS=G3HF3GZpLR
-PIA_AUTOCONNECT=true
-PIA_PROTOCOL=wireguard
-</file>
-
-<file path=".gitignore">
-hardware-configuration.nix
-</file>
-
 <file path="build.sh">
 nixos-rebuild switch --flake .#nixtars
 </file>
@@ -742,6 +1449,90 @@ nixos-rebuild switch --flake .#nixtars
 <file path="flake.lock">
 {
   "nodes": {
+    "base16": {
+      "inputs": {
+        "fromYaml": "fromYaml"
+      },
+      "locked": {
+        "lastModified": 1755819240,
+        "narHash": "sha256-qcMhnL7aGAuFuutH4rq9fvAhCpJWVHLcHVZLtPctPlo=",
+        "owner": "SenchoPens",
+        "repo": "base16.nix",
+        "rev": "75ed5e5e3fce37df22e49125181fa37899c3ccd6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "SenchoPens",
+        "repo": "base16.nix",
+        "type": "github"
+      }
+    },
+    "base16-fish": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1765809053,
+        "narHash": "sha256-XCUQLoLfBJ8saWms2HCIj4NEN+xNsWBlU1NrEPcQG4s=",
+        "owner": "tomyun",
+        "repo": "base16-fish",
+        "rev": "86cbea4dca62e08fb7fd83a70e96472f92574782",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tomyun",
+        "repo": "base16-fish",
+        "rev": "86cbea4dca62e08fb7fd83a70e96472f92574782",
+        "type": "github"
+      }
+    },
+    "base16-helix": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1760703920,
+        "narHash": "sha256-m82fGUYns4uHd+ZTdoLX2vlHikzwzdu2s2rYM2bNwzw=",
+        "owner": "tinted-theming",
+        "repo": "base16-helix",
+        "rev": "d646af9b7d14bff08824538164af99d0c521b185",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tinted-theming",
+        "repo": "base16-helix",
+        "type": "github"
+      }
+    },
+    "base16-vim": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1732806396,
+        "narHash": "sha256-e0bpPySdJf0F68Ndanwm+KWHgQiZ0s7liLhvJSWDNsA=",
+        "owner": "tinted-theming",
+        "repo": "base16-vim",
+        "rev": "577fe8125d74ff456cf942c733a85d769afe58b7",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tinted-theming",
+        "repo": "base16-vim",
+        "rev": "577fe8125d74ff456cf942c733a85d769afe58b7",
+        "type": "github"
+      }
+    },
+    "firefox-gnome-theme": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1764873433,
+        "narHash": "sha256-1XPewtGMi+9wN9Ispoluxunw/RwozuTRVuuQOmxzt+A=",
+        "owner": "rafaelmardojai",
+        "repo": "firefox-gnome-theme",
+        "rev": "f7ffd917ac0d253dbd6a3bf3da06888f57c69f92",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rafaelmardojai",
+        "repo": "firefox-gnome-theme",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -766,11 +1557,32 @@ nixos-rebuild switch --flake .#nixtars
         ]
       },
       "locked": {
-        "lastModified": 1760948891,
-        "narHash": "sha256-TmWcdiUUaWk8J4lpjzu4gCGxWY6/Ok7mOK4fIFfBuU4=",
+        "lastModified": 1768135262,
+        "narHash": "sha256-PVvu7OqHBGWN16zSi6tEmPwwHQ4rLPU9Plvs8/1TUBY=",
         "owner": "hercules-ci",
         "repo": "flake-parts",
-        "rev": "864599284fc7c0ba6357ed89ed5e2cd5040f0c04",
+        "rev": "80daad04eddbbf5a4d883996a73f3f542fa437ac",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "flake-parts_2": {
+      "inputs": {
+        "nixpkgs-lib": [
+          "stylix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1767609335,
+        "narHash": "sha256-feveD98mQpptwrAEggBQKJTYbvwwglSbOv53uCfH9PY=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "250481aafeb741edfe23d29195671c19b36b6dca",
         "type": "github"
       },
       "original": {
@@ -797,6 +1609,41 @@ nixos-rebuild switch --flake .#nixtars
         "type": "github"
       }
     },
+    "fromYaml": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1731966426,
+        "narHash": "sha256-lq95WydhbUTWig/JpqiB7oViTcHFP8Lv41IGtayokA8=",
+        "owner": "SenchoPens",
+        "repo": "fromYaml",
+        "rev": "106af9e2f715e2d828df706c386a685698f3223b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "SenchoPens",
+        "repo": "fromYaml",
+        "type": "github"
+      }
+    },
+    "gnome-shell": {
+      "flake": false,
+      "locked": {
+        "host": "gitlab.gnome.org",
+        "lastModified": 1767737596,
+        "narHash": "sha256-eFujfIUQDgWnSJBablOuG+32hCai192yRdrNHTv0a+s=",
+        "owner": "GNOME",
+        "repo": "gnome-shell",
+        "rev": "ef02db02bf0ff342734d525b5767814770d85b49",
+        "type": "gitlab"
+      },
+      "original": {
+        "host": "gitlab.gnome.org",
+        "owner": "GNOME",
+        "ref": "gnome-49",
+        "repo": "gnome-shell",
+        "type": "gitlab"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -804,11 +1651,11 @@ nixos-rebuild switch --flake .#nixtars
         ]
       },
       "locked": {
-        "lastModified": 1768068402,
-        "narHash": "sha256-bAXnnJZKJiF7Xr6eNW6+PhBf1lg2P1aFUO9+xgWkXfA=",
+        "lastModified": 1768434960,
+        "narHash": "sha256-cJbFn17oyg6qAraLr+NVeNJrXsrzJdrudkzI4H2iTcg=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "8bc5473b6bc2b6e1529a9c4040411e1199c43b4c",
+        "rev": "b4d88c9ac42ae1a745283f6547701da43b6e9f9b",
         "type": "github"
       },
       "original": {
@@ -838,11 +1685,11 @@ nixos-rebuild switch --flake .#nixtars
     },
     "mnw": {
       "locked": {
-        "lastModified": 1758834834,
-        "narHash": "sha256-Y7IvY4F8vajZyp3WGf+KaiIVwondEkMFkt92Cr9NZmg=",
+        "lastModified": 1767030222,
+        "narHash": "sha256-kSvWF3Xt2HW9hmV5V7i8PqeWJIBUKmuKoHhOgj3Znzs=",
         "owner": "Gerg-L",
         "repo": "mnw",
-        "rev": "cfbc7d1cc832e318d0863a5fc91d940a96034001",
+        "rev": "75bb637454b0fbbb5ed652375a4bf7ffd28bcf6f",
         "type": "github"
       },
       "original": {
@@ -859,16 +1706,37 @@ nixos-rebuild switch --flake .#nixtars
         ]
       },
       "locked": {
-        "lastModified": 1765720983,
-        "narHash": "sha256-tWtukpABmux6EC/FuCJEgA1kmRjcRPtED44N+GGPq+4=",
+        "lastModified": 1768214250,
+        "narHash": "sha256-hnBZDQWUxJV3KbtvyGW5BKLO/fAwydrxm5WHCWMQTbw=",
         "owner": "feel-co",
         "repo": "ndg",
-        "rev": "f399ace8bb8e1f705dd8942b24d207aa4d75c936",
+        "rev": "a6bd3c1ce2668d096e4fdaaa03ad7f03ba1fbca8",
         "type": "github"
       },
       "original": {
         "owner": "feel-co",
+        "ref": "refs/tags/v2.6.0",
         "repo": "ndg",
+        "type": "github"
+      }
+    },
+    "niri-session-manager": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_2",
+        "systems": "systems_2",
+        "treefmt-nix": "treefmt-nix"
+      },
+      "locked": {
+        "lastModified": 1753450115,
+        "narHash": "sha256-5itrK5V9ZHGKIjKODTcneAanvs021Bk0CBJxBYRPaMs=",
+        "owner": "MTeaHead",
+        "repo": "niri-session-manager",
+        "rev": "2d9ae35bb654ad0cdc5f646e5fee446bf3af083c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "MTeaHead",
+        "repo": "niri-session-manager",
         "type": "github"
       }
     },
@@ -890,17 +1758,90 @@ nixos-rebuild switch --flake .#nixtars
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1767892417,
-        "narHash": "sha256-dhhvQY67aboBk8b0/u0XB6vwHdgbROZT3fJAjyNh5Ww=",
+        "lastModified": 1749619289,
+        "narHash": "sha256-qX6gXVjaCXXbcn6A9eSLUf8Fm07MgPGe5ir3++y2O1Q=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "3497aa5c9457a9d88d71fa93a4a8368816fbeeba",
+        "rev": "f72be405a10668b8b00937b452f2145244103ebc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_3": {
+      "locked": {
+        "lastModified": 1749619289,
+        "narHash": "sha256-qX6gXVjaCXXbcn6A9eSLUf8Fm07MgPGe5ir3++y2O1Q=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "f72be405a10668b8b00937b452f2145244103ebc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_4": {
+      "locked": {
+        "lastModified": 1768305791,
+        "narHash": "sha256-AIdl6WAn9aymeaH/NvBj0H9qM+XuAuYbGMZaP0zcXAQ=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "1412caf7bf9e660f2f962917c14b1ea1c3bc695e",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
         "ref": "nixos-unstable",
         "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_5": {
+      "locked": {
+        "lastModified": 1767767207,
+        "narHash": "sha256-Mj3d3PfwltLmukFal5i3fFt27L6NiKXdBezC1EBuZs4=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "5912c1772a44e31bf1c63c0390b90501e5026886",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nur": {
+      "inputs": {
+        "flake-parts": [
+          "stylix",
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "stylix",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1767810917,
+        "narHash": "sha256-ZKqhk772+v/bujjhla9VABwcvz+hB2IaRyeLT6CFnT0=",
+        "owner": "nix-community",
+        "repo": "NUR",
+        "rev": "dead29c804adc928d3a69dfe7f9f12d0eec1f1a4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "NUR",
         "type": "github"
       }
     },
@@ -913,14 +1854,14 @@ nixos-rebuild switch --flake .#nixtars
         "nixpkgs": [
           "nixpkgs"
         ],
-        "systems": "systems_2"
+        "systems": "systems_3"
       },
       "locked": {
-        "lastModified": 1768135144,
-        "narHash": "sha256-c9q5pGqfVEcxqXLmjug0skKdE4IT4zFKbQdEzXGHTVY=",
+        "lastModified": 1768464392,
+        "narHash": "sha256-H3DRARqclUFdUaWgu1xQEb86/wrh41ZG0fIQJVjcZdE=",
         "owner": "notashelf",
         "repo": "nvf",
-        "rev": "c7fe3c1818d01f71f2e1a0ec9b8e1c6a7e5c171b",
+        "rev": "007f14a2c8d67568f4655654b401871920d73011",
         "type": "github"
       },
       "original": {
@@ -933,8 +1874,42 @@ nixos-rebuild switch --flake .#nixtars
       "inputs": {
         "home-manager": "home-manager",
         "lazyvim": "lazyvim",
-        "nixpkgs": "nixpkgs_2",
-        "nvf": "nvf"
+        "niri-session-manager": "niri-session-manager",
+        "nixpkgs": "nixpkgs_4",
+        "nvf": "nvf",
+        "stylix": "stylix"
+      }
+    },
+    "stylix": {
+      "inputs": {
+        "base16": "base16",
+        "base16-fish": "base16-fish",
+        "base16-helix": "base16-helix",
+        "base16-vim": "base16-vim",
+        "firefox-gnome-theme": "firefox-gnome-theme",
+        "flake-parts": "flake-parts_2",
+        "gnome-shell": "gnome-shell",
+        "nixpkgs": "nixpkgs_5",
+        "nur": "nur",
+        "systems": "systems_4",
+        "tinted-foot": "tinted-foot",
+        "tinted-kitty": "tinted-kitty",
+        "tinted-schemes": "tinted-schemes",
+        "tinted-tmux": "tinted-tmux",
+        "tinted-zed": "tinted-zed"
+      },
+      "locked": {
+        "lastModified": 1768492720,
+        "narHash": "sha256-aHos307HyVtOriYZppyUjrkcEKQzyp9F5WzxpMjPFH8=",
+        "owner": "danth",
+        "repo": "stylix",
+        "rev": "5287bc719dbb6efb26f48c1677a221c966a4a4d9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "danth",
+        "repo": "stylix",
+        "type": "github"
       }
     },
     "systems": {
@@ -964,6 +1939,135 @@ nixos-rebuild switch --flake .#nixtars
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "systems_3": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
+    "systems_4": {
+      "locked": {
+        "lastModified": 1681028828,
+        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
+        "owner": "nix-systems",
+        "repo": "default",
+        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-systems",
+        "repo": "default",
+        "type": "github"
+      }
+    },
+    "tinted-foot": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1726913040,
+        "narHash": "sha256-+eDZPkw7efMNUf3/Pv0EmsidqdwNJ1TaOum6k7lngDQ=",
+        "owner": "tinted-theming",
+        "repo": "tinted-foot",
+        "rev": "fd1b924b6c45c3e4465e8a849e67ea82933fcbe4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tinted-theming",
+        "repo": "tinted-foot",
+        "rev": "fd1b924b6c45c3e4465e8a849e67ea82933fcbe4",
+        "type": "github"
+      }
+    },
+    "tinted-kitty": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1735730497,
+        "narHash": "sha256-4KtB+FiUzIeK/4aHCKce3V9HwRvYaxX+F1edUrfgzb8=",
+        "owner": "tinted-theming",
+        "repo": "tinted-kitty",
+        "rev": "de6f888497f2c6b2279361bfc790f164bfd0f3fa",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tinted-theming",
+        "repo": "tinted-kitty",
+        "type": "github"
+      }
+    },
+    "tinted-schemes": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1767710407,
+        "narHash": "sha256-+W1EB79Jl0/gm4JqmO0Nuc5C7hRdp4vfsV/VdzI+des=",
+        "owner": "tinted-theming",
+        "repo": "schemes",
+        "rev": "2800e2b8ac90f678d7e4acebe4fa253f602e05b2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tinted-theming",
+        "repo": "schemes",
+        "type": "github"
+      }
+    },
+    "tinted-tmux": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1767489635,
+        "narHash": "sha256-e6nnFnWXKBCJjCv4QG4bbcouJ6y3yeT70V9MofL32lU=",
+        "owner": "tinted-theming",
+        "repo": "tinted-tmux",
+        "rev": "3c32729ccae99be44fe8a125d20be06f8d7d8184",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tinted-theming",
+        "repo": "tinted-tmux",
+        "type": "github"
+      }
+    },
+    "tinted-zed": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1767488740,
+        "narHash": "sha256-wVOj0qyil8m+ouSsVZcNjl5ZR+1GdOOAooAatQXHbuU=",
+        "owner": "tinted-theming",
+        "repo": "base16-zed",
+        "rev": "11abb0b282ad3786a2aae088d3a01c60916f2e40",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tinted-theming",
+        "repo": "base16-zed",
+        "type": "github"
+      }
+    },
+    "treefmt-nix": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_3"
+      },
+      "locked": {
+        "lastModified": 1732894027,
+        "narHash": "sha256-2qbdorpq0TXHBWbVXaTqKoikN4bqAtAplTwGuII+oAc=",
+        "owner": "numtide",
+        "repo": "treefmt-nix",
+        "rev": "6209c381904cab55796c5d7350e89681d3b2a8ef",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "treefmt-nix",
         "type": "github"
       }
     }
@@ -1011,9 +2115,19 @@ nixos-rebuild switch --flake .#nixtars
       url = "github:notashelf/nvf";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    stylix.url = "github:danth/stylix";
+
+    #niri
+    niri-session-manager.url = "github:MTeaHead/niri-session-manager";
+
+
+    #inputs.zotero-nix.url = "github:camillemndn/zotero-nix";
+
+
   };
 
-  outputs = { self, nixpkgs, home-manager, lazyvim, ... }@inputs: {
+  outputs = { self, nixpkgs, home-manager, lazyvim, niri-session-manager, ... }@inputs: {
     # use "nixos", or your hostname as the name of the configuration
     # it's a better practice than "default" shown in the video
     nixosConfigurations.nixtars = nixpkgs.lib.nixosSystem {
@@ -1032,199 +2146,257 @@ nixos-rebuild switch --flake .#nixtars
 # Commands: 
 
 ```sh
-sudo nixos-rebuild switch --flake /etc/nixos/#default
+sudo nixos-rebuild switch --flake /home/tobi/#nixtars
 ```
+
+
+# Issues and TODOs
+
+- 
+  Summary of Findings:
+   1. Niri Config Error: You have a syntax error in ~/nixtars/hosts/default/config.kdl on
+      line 319 (Mod+? is missing an action block).
+   2. Networking & Signal Issues: Your Niri session lacks a running Secret Service (Keyring).
+      KDE Plasma provides this automatically (kwallet), but Niri does not. This prevents
+      NetworkManager from saving Wi-Fi passwords and Signal from accessing its encryption
+      keys.
+   3. Reference Comparison: Your friend 'not-matthias' explicitly enables gnome-keyring and
+      polkit in their Niri module, which is missing from your configuration.
+
+  Proposed Plan:
+   1. Fix Niri Config: Remove the broken line in config.kdl.
+   2. Enable Keyring: Add services.gnome.gnome-keyring.enable = true; to your
+      configuration.nix to handle passwords and secrets system-wide.
+      
+
+
+- [tobi@nixtars:~]$ niri
+2026-01-15T15:15:14.296571Z  INFO niri: starting version 25.11 (Nixpkgs)
+2026-01-15T15:15:14.353075Z  WARN niri:   × error loading config
+  ├─▶ error parsing
+  ╰─▶ error parsing KDL
+
+Error:   × invalid keybind
+  ├─▶ invalid keybind
+  ╰─▶ invalid key: ?
+     ╭─[config.kdl:362:1]
+ 362 │     Mod+Shift+Slash { show-hotkey-overlay; }
+ 363 │     Mod+?
+     ·     ──┬──
+     ·       ╰── invalid value
+ 364 │
+     ╰────
+
+2026-01-15T15:15:14.455333Z  WARN niri::backend::winit: error binding renderer wl_display: None of the following EGL extensions is supported by the underlying EGL implementation, at least one is required: ["EGL_WL_bind_wayland_display"]
+2026-01-15T15:15:14.476626Z DEBUG niri::niri: putting output winit at x=0 y=0
+2026-01-15T15:15:14.476672Z  INFO niri: listening on Wayland socket: wayland-2
+2026-01-15T15:15:14.476676Z  INFO niri: IPC listening on: /run/user/1000/niri.wayland-2.42094.sock
+2026-01-15T15:15:14.479010Z  INFO niri: listening on X11 socket: :1
+2026-01-15T15:15:19.189412Z DEBUG niri::utils::watcher: exiting watcher thread for Regular { user_path: "/home/tobi/.config/niri/config.kdl", system_path: "/etc/niri/config.kdl" }
 </file>
 
-<file path="summary.txt">
+<file path="hosts/default/home.nix">
+{ config, pkgs, inputs, lib, ... }:
+
 {
-  "nodes": {
-    "home-manager": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1758593331,
-        "narHash": "sha256-p+904PfmINyekyA/LieX3IYGsiFtExC00v5gSYfJtpM=",
-        "owner": "nix-community",
-        "repo": "home-manager",
-        "rev": "9a2dc0efbc569ce9352a6ffb8e8ec8dbc098e142",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "repo": "home-manager",
-        "type": "github"
-      }
-    },
-    "nixpkgs": {
-      "locked": {
-        "lastModified": 1758427187,
-        "narHash": "sha256-pHpxZ/IyCwoTQPtFIAG2QaxuSm8jWzrzBGjwQZIttJc=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "554be6495561ff07b6c724047bdd7e0716aa7b46",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "ref": "nixos-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "root": {
-      "inputs": {
-        "home-manager": "home-manager",
-        "nixpkgs": "nixpkgs"
-      }
-    }
-  },
-  "root": "root",
-  "version": 7
-}
-{
-  description = "Nixos config flake";
-  nixConfig = { 
-  	extra-substituters = [
-		"https://cuda-maintainers.cachix.org"
-	];
-	extra-trusted-public-keys = [
-		"cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
-	];
+  # Home Manager needs a bit of information about you and the paths it should
+  # manage.
+  home.username = "tobi";
+  home.homeDirectory = "/home/tobi";
+
+  # This value determines the Home Manager release that your configuration is
+  # compatible with. This helps avoid breakage when a new Home Manager release
+  # introduces backwards incompatible changes.
+  #
+  # You should not change this value, even if you update Home Manager. If you do
+  # want to update the value, then make sure to first check the Home Manager
+  # release notes.
+  home.stateVersion = "25.11"; # Please read the comment before changing.
+
+  # The home.packages option allows you to install Nix packages into your
+  # environment.
+  #home.packages = [
+    # # Adds the 'hello' command to your environment. It prints a friendly
+    # # "Hello, world!" when run.
+   # pkgs.hello
+
+
+    # # It is sometimes useful to fine-tune packages, for example, by applying
+    # # overrides. You can do that directly here, just don't forget the
+    # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
+    # # fonts?
+    # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
+
+    # # You can also create simple shell scripts directly inside your
+    # # configuration. For example, this adds a command 'my-hello' to your
+    # # environment:
+    # (pkgs.writeShellScriptBin "my-hello" ''
+    #   echo "Hello, ${config.home.username}!"
+    # '')
+# ];
+
+  # Home Manager is pretty good at managing dotfiles. The primary way to manage
+  # plain files is through 'home.file'.-fonts
+  home.file = {
+    # # Building this configuration will create a copy of 'dotfiles/screenrc' in
+    # # the Nix store. Activating the configuration will then make '~/.screenrc' a
+    # # symlink to the Nix store copy.
+    # ".screenrc".source = dotfiles/screenrc;
+
+    # # You can also set the file content immediately.
+    # ".gradle/gradle.properties".text = ''
+    #   org.gradle.console=verbose
+    #   org.gradle.daemon.idletimeout=3600000
+    # '';
   };
 
-  inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    #nix-pia-vpn = {
-     #url = "github:rcambrj/nix-pia-vpn";
-     #inputs.nixpkgs.follows = "nixpkgs";
-    #};
+  # Home Manager can also manage your environment variables through
+  # 'home.sessionVariables'. These will be explicitly sourced when using a
+  # shell provided by Home Manager. If you don't want to manage your shell
+  # through Home Manager then you have to manually source 'hm-session-vars.sh'
+  # located at either
+  #
+  #  ~/.nix-profile/etc/profile.d/hm-session-vars.sh
+  #
+  # or
+  #
+  #  ~/.local/state/nix/profiles/profile/etc/profile.d/hm-session-vars.sh
+  #
+  # or
+  #  programs.fish.enable = true;
+  #  /etc/profiles/per-user/tobi/etc/profile.d/hm-session-vars.sh
+  #
+  home.sessionVariables = {
+    EDITOR = "nvim";
   };
 
-  outputs = { self, nixpkgs, ... }@inputs: {
-    # use "nixos", or your hostname as the name of the configuration
-    # it's a better practice than "default" shown in the video
-    nixosConfigurations.nixtars = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs;};
-      modules = [
-        ./hosts/default/configuration.nix
-        inputs.home-manager.nixosModules.default
-	  #inputs.nix-pia-vpn.nixosModules.default
-      ];
-    };
-  };
-}
+  # Let Home Manager install and manage itself.
+  programs.home-manager.enable = true;
 
-# Commands: 
 
-```sh
-sudo nixos-rebuild switch --flake /etc/nixos/#default
-```
-nixos-rebuild switch --flake .#nixtars
-{
-  "nodes": {
-    "home-manager": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1758593331,
-        "narHash": "sha256-p+904PfmINyekyA/LieX3IYGsiFtExC00v5gSYfJtpM=",
-        "owner": "nix-community",
-        "repo": "home-manager",
-        "rev": "9a2dc0efbc569ce9352a6ffb8e8ec8dbc098e142",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-community",
-        "repo": "home-manager",
-        "type": "github"
-      }
-    },
-    "nixpkgs": {
-      "locked": {
-        "lastModified": 1758427187,
-        "narHash": "sha256-pHpxZ/IyCwoTQPtFIAG2QaxuSm8jWzrzBGjwQZIttJc=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "554be6495561ff07b6c724047bdd7e0716aa7b46",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "ref": "nixos-unstable",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
-    "root": {
-      "inputs": {
-        "home-manager": "home-manager",
-        "nixpkgs": "nixpkgs"
-      }
-    }
-  },
-  "root": "root",
-  "version": 7
-}
-{
-  description = "Nixos config flake";
-  nixConfig = { 
-  	extra-substituters = [
-	  "https://cache.nixos.org"
-          "https://nix-community.cachix.org"
-	  "https://cuda-maintainers.cachix.org"
-	];
-	extra-trusted-public-keys = [
-	      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-		"cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
-	];
+
+  programs.btop = {
+	enable=true;
+	settings = {
+	  color_theme = lib.mkForce "gruvbox_dark_v2";
+	  vim_keys = true;
+	};
   };
 
-  inputs = {
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    #nix-pia-vpn = {
-     #url = "github:rcambrj/nix-pia-vpn";
-     #inputs.nixpkgs.follows = "nixpkgs";
-    #};
+  programs.git = {
+    enable = true;
+    userName = "Tobias";
+    userEmail = "tobiaspucher@gmail.com";
   };
 
-  outputs = { self, nixpkgs, ... }@inputs: {
-    # use "nixos", or your hostname as the name of the configuration
-    # it's a better practice than "default" shown in the video
-    nixosConfigurations.nixtars = nixpkgs.lib.nixosSystem {
-      specialArgs = {inherit inputs;};
-      modules = [
-        ./hosts/default/configuration.nix
-        inputs.home-manager.nixosModules.default
-	  #inputs.nix-pia-vpn.nixosModules.default
-      ];
+  programs.gh = {
+    enable = true;
+    gitCredentialHelper = {
+      enable = true;
     };
   };
+
+  #programs.steam = {
+  #  enable = true;
+  #  remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
+  #  dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
+  #  localNetworkGameTransfers.openFirewall = true; # Open ports in the firewall for Steam Local Network Game Transfers
+  #
+
+
+  #niri
+  xdg.configFile."niri/config.kdl".source = ./config.kdl;
+  programs.alacritty.enable = true; # Super+T in the default setting (terminal)
+  programs.fuzzel.enable = true; # Super+D in the default setting (app launcher)
+  programs.swaylock.enable = true; # Super+Alt+L in the default setting (screen locker)
+  services.mako.enable = true; # notification daemon
+  services.swayidle.enable = true; # idle management daemon
+  services.polkit-gnome.enable = true; # polkit
+
+
+  imports = [
+    inputs.nvf.homeManagerModules.default
+    ./waybar/default.nix
+    ./nvf.nix
+  ];
+
+  # programs.nvf moved to ./nvf.nix
+
+
+  programs.direnv.enable = true;
+
+  home.packages = with pkgs; [
+   hello
+   direnv
+   nix-direnv
+   repomix
+   #<niri
+   swaybg # wallpaper
+   xwayland-satellite
+   networkmanagerapplet
+   wl-clipboard
+   slurp
+   #niri>
+  ];
+
+  programs.ghostty = {
+    enable = true;
+    package = if pkgs.stdenv.isDarwin then pkgs.ghostty-bin else pkgs.ghostty;
+
+    # Enable for whichever shell you plan to use!
+    enableBashIntegration = true;
+    enableFishIntegration = true;
+    enableZshIntegration = true;
+
+    settings = {
+      #theme = "Abernathy";
+      #theme = "Arthur";
+      theme = "Carbonfox";
+      background-opacity = "0.8";
+      background-blur = 20;
+      font-family = "Lilex Nerd Font Mono";
+    };
+  };
+
+
+  services.flameshot = {
+    enable = true;
+    settings = {
+      General = {
+        #<grim
+        useGrimAdapter = true;
+        # Stops warnings for using Grim
+        disabledGrimWarning = true;
+        #grim>
+
+        # More settings may be found on the Flameshot Github
+        # Save Path
+        savePath = "/home/user/Screenshots";
+        # Tray
+        disabledTrayIcon = true;
+        # Greeting message
+        showStartupLaunchMessage = false;
+        # Default file extension for screenshots (.png by default)
+        saveAsFileExtension = ".png";
+        # Desktop notifications
+        showDesktopNotification = true;
+        # Notification for cancelled screenshot
+        showAbortNotification = false;
+        # Whether to show the info panel in the center in GUI mode
+        showHelp = true;
+        # Whether to show the left side button in GUI mode
+        showSidePanelButton = true;
+
+
+        # Color Customization
+        uiColor = "#740096";
+        contrastUiColor = "#270032";
+        drawColor = "#ff0000";
+
+      };
+    };
+  };
 }
-
-# Commands: 
-
-```sh
-sudo nixos-rebuild switch --flake /etc/nixos/#default
-```
 </file>
 
 <file path="hosts/default/configuration.nix">
@@ -1239,6 +2411,7 @@ sudo nixos-rebuild switch --flake /etc/nixos/#default
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
       inputs.home-manager.nixosModules.default
+      ./stylix.nix
     ];
 
   hardware.bluetooth.enable = true;
@@ -1270,7 +2443,7 @@ sudo nixos-rebuild switch --flake /etc/nixos/#default
   #services.ollama.enable = true;
   #services.ollama.acceleration = "cuda"; # enable nvidia driver
   hardware.graphics.enable = true;
-  hardware.nvidia.open = true;
+  hardware.nvidia.open = false;
   hardware.opengl.enable = true;
   services.xserver.videoDrivers = [ "nvidia" ];
 
@@ -1313,6 +2486,33 @@ sudo nixos-rebuild switch --flake /etc/nixos/#default
   # Enable the X11 windowing system.
   # You can disable this if you're only using the Wayland session.
   services.xserver.enable = true;
+
+  # Enable gnome-keyring for secret management (WiFi passwords, Signal, etc.)
+  services.gnome.gnome-keyring.enable = true;
+  security.polkit.enable = true;
+  security.pam.services.login.enableGnomeKeyring = true;
+
+  # XDG Desktop Portal configuration for app integration
+  xdg.portal = {
+    enable = true;
+    wlr.enable = true;
+    extraPortals = with pkgs; [
+      xdg-desktop-portal-gtk
+      xdg-desktop-portal-gnome
+    ];
+    config = {
+      common.default = "*";
+      niri = {
+        default = ["gnome" "gtk"];
+        "org.freedesktop.impl.portal.Screenshot" = ["gnome"];
+      };
+    };
+  };
+
+  environment.sessionVariables = {
+    NIXOS_OZONE_WL = "1";
+    ELECTRON_OZONE_PLATFORM_HINT = "auto";
+  };
 
   # Enable the KDE Plasma Desktop Environment.
   services.displayManager.sddm.enable = true;
@@ -1432,6 +2632,7 @@ sudo nixos-rebuild switch --flake /etc/nixos/#default
     uv
     microsoft-edge
     signal-desktop
+    libsecret
     #jetbrains.pycharm-professional
     obsidian
     discord
@@ -1448,6 +2649,8 @@ sudo nixos-rebuild switch --flake /etc/nixos/#default
 
     gemini-cli
     tmux
+    feh
+
 
     (pkgs.anki.withAddons [
       # Specify the anki-connect add-on and provide its configuration
@@ -1483,6 +2686,15 @@ sudo nixos-rebuild switch --flake /etc/nixos/#default
     luaPackages.luarocks
     #datanvim>
 
+    zoom-us
+    yt-dlp
+
+    # Common scientific / desktop calculators
+    qalculate-gtk
+    speedcrunch
+    kdePackages.kcalc
+    gnome-calculator
+    xcalc
  ];
 
 
@@ -1513,208 +2725,6 @@ sudo nixos-rebuild switch --flake /etc/nixos/#default
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "25.11"; # Did you read the comment?
 
-}
-</file>
-
-<file path="hosts/default/home.nix">
-{ config, pkgs, inputs, ... }:
-
-{
-  # Home Manager needs a bit of information about you and the paths it should
-  # manage.
-  home.username = "tobi";
-  home.homeDirectory = "/home/tobi";
-
-  # This value determines the Home Manager release that your configuration is
-  # compatible with. This helps avoid breakage when a new Home Manager release
-  # introduces backwards incompatible changes.
-  #
-  # You should not change this value, even if you update Home Manager. If you do
-  # want to update the value, then make sure to first check the Home Manager
-  # release notes.
-  home.stateVersion = "25.11"; # Please read the comment before changing.
-
-  # The home.packages option allows you to install Nix packages into your
-  # environment.
-  #home.packages = [
-    # # Adds the 'hello' command to your environment. It prints a friendly
-    # # "Hello, world!" when run.
-   # pkgs.hello
-
-
-    # # It is sometimes useful to fine-tune packages, for example, by applying
-    # # overrides. You can do that directly here, just don't forget the
-    # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
-    # # fonts?
-    # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
-
-    # # You can also create simple shell scripts directly inside your
-    # # configuration. For example, this adds a command 'my-hello' to your
-    # # environment:
-    # (pkgs.writeShellScriptBin "my-hello" ''
-    #   echo "Hello, ${config.home.username}!"
-    # '')
-# ];
-
-  # Home Manager is pretty good at managing dotfiles. The primary way to manage
-  # plain files is through 'home.file'.-fonts
-  home.file = {
-    # # Building this configuration will create a copy of 'dotfiles/screenrc' in
-    # # the Nix store. Activating the configuration will then make '~/.screenrc' a
-    # # symlink to the Nix store copy.
-    # ".screenrc".source = dotfiles/screenrc;
-
-    # # You can also set the file content immediately.
-    # ".gradle/gradle.properties".text = ''
-    #   org.gradle.console=verbose
-    #   org.gradle.daemon.idletimeout=3600000
-    # '';
-  };
-
-  # Home Manager can also manage your environment variables through
-  # 'home.sessionVariables'. These will be explicitly sourced when using a
-  # shell provided by Home Manager. If you don't want to manage your shell
-  # through Home Manager then you have to manually source 'hm-session-vars.sh'
-  # located at either
-  #
-  #  ~/.nix-profile/etc/profile.d/hm-session-vars.sh
-  #
-  # or
-  #
-  #  ~/.local/state/nix/profiles/profile/etc/profile.d/hm-session-vars.sh
-  #
-  # or
-  #  programs.fish.enable = true;
-  #  /etc/profiles/per-user/tobi/etc/profile.d/hm-session-vars.sh
-  #
-  home.sessionVariables = {
-    EDITOR = "nvim";
-  };
-
-  # Let Home Manager install and manage itself.
-  programs.home-manager.enable = true;
-
-
-
-  programs.btop = {
-	enable=true;
-	settings = {
-	  color_theme = "gruvbox_dark_v2";
-	  vim_keys = true;
-	};
-  };
-
-  programs.git = {
-    enable = true;
-    userName = "Tobias";
-    userEmail = "tobiaspucher@gmail.com";
-  };
-
-  programs.gh = {
-    enable = true;
-    gitCredentialHelper = {
-      enable = true;
-    };
-  };
-
-  #programs.steam = {
-  #  enable = true;
-  #  remotePlay.openFirewall = true; # Open ports in the firewall for Steam Remote Play
-  #  dedicatedServer.openFirewall = true; # Open ports in the firewall for Source Dedicated Server
-  #  localNetworkGameTransfers.openFirewall = true; # Open ports in the firewall for Steam Local Network Game Transfers
-  #
-
-
-  #niri
-  xdg.configFile."niri/config.kdl".source = ./config.kdl;
-  programs.alacritty.enable = true; # Super+T in the default setting (terminal)
-  programs.fuzzel.enable = true; # Super+D in the default setting (app launcher)
-  programs.swaylock.enable = true; # Super+Alt+L in the default setting (screen locker)
-  programs.waybar.enable = true; # launch on startup in the default setting (bar)
-  services.mako.enable = true; # notification daemon
-  services.swayidle.enable = true; # idle management daemon
-  services.polkit-gnome.enable = true; # polkit
-
-
-  imports = [
-    inputs.nvf.homeManagerModules.default
-  ];
-
-  programs.nvf = {
-    enable = true;
-    enableManpages = true;  # optional but helpful
-  };
-
-  programs.direnv.enable = true;
-
-  home.packages = with pkgs; [
-   hello
-   direnv
-   nix-direnv
-   repomix
-   #<niri
-   swaybg # wallpaper
-   xwayland-satellite
-   #niri>
-  ];
-
-  programs.ghostty = {
-    enable = true;
-    package = if pkgs.stdenv.isDarwin then pkgs.ghostty-bin else pkgs.ghostty;
-
-    # Enable for whichever shell you plan to use!
-    enableBashIntegration = true;
-    enableFishIntegration = true;
-    enableZshIntegration = true;
-
-    settings = {
-      #theme = "Abernathy";
-      #theme = "Arthur";
-      theme = "Carbonfox";
-      background-opacity = "0.8";
-      background-blur = 20;
-      font-family = "Lilex Nerd Font Mono";
-    };
-  };
-
-
-  services.flameshot = {
-    enable = true;
-    settings = {
-      General = {
-        #<grim
-        useGrimAdapter = true;
-        # Stops warnings for using Grim
-        disabledGrimWarning = true;
-        #grim>
-
-        # More settings may be found on the Flameshot Github
-        # Save Path
-        savePath = "/home/user/Screenshots";
-        # Tray
-        disabledTrayIcon = true;
-        # Greeting message
-        showStartupLaunchMessage = false;
-        # Default file extension for screenshots (.png by default)
-        saveAsFileExtension = ".png";
-        # Desktop notifications
-        showDesktopNotification = true;
-        # Notification for cancelled screenshot
-        showAbortNotification = false;
-        # Whether to show the info panel in the center in GUI mode
-        showHelp = true;
-        # Whether to show the left side button in GUI mode
-        showSidePanelButton = true;
-
-
-        # Color Customization
-        uiColor = "#740096";
-        contrastUiColor = "#270032";
-        drawColor = "#ff0000";
-
-      };
-    };
-  };
 }
 </file>
 

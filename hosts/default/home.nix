@@ -1,4 +1,4 @@
-{ config, pkgs, inputs, ... }:
+{ config, pkgs, inputs, lib, ... }:
 
 {
   # Home Manager needs a bit of information about you and the paths it should
@@ -80,7 +80,7 @@
   programs.btop = {
 	enable=true;
 	settings = {
-	  color_theme = "gruvbox_dark_v2";
+	  color_theme = lib.mkForce "gruvbox_dark_v2";
 	  vim_keys = true;
 	};
   };
@@ -111,7 +111,6 @@
   programs.alacritty.enable = true; # Super+T in the default setting (terminal)
   programs.fuzzel.enable = true; # Super+D in the default setting (app launcher)
   programs.swaylock.enable = true; # Super+Alt+L in the default setting (screen locker)
-  programs.waybar.enable = true; # launch on startup in the default setting (bar)
   services.mako.enable = true; # notification daemon
   services.swayidle.enable = true; # idle management daemon
   services.polkit-gnome.enable = true; # polkit
@@ -119,12 +118,12 @@
 
   imports = [
     inputs.nvf.homeManagerModules.default
+    ./waybar/default.nix
+    ./nvf.nix
   ];
 
-  programs.nvf = {
-    enable = true;
-    enableManpages = true;  # optional but helpful
-  };
+  # programs.nvf moved to ./nvf.nix
+
 
   programs.direnv.enable = true;
 
@@ -136,6 +135,9 @@
    #<niri
    swaybg # wallpaper
    xwayland-satellite
+   networkmanagerapplet
+   wl-clipboard
+   slurp
    #niri>
   ];
 

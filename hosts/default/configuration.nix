@@ -9,6 +9,7 @@
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
       inputs.home-manager.nixosModules.default
+      ./stylix.nix
     ];
 
   hardware.bluetooth.enable = true;
@@ -87,6 +88,29 @@
   # Enable gnome-keyring for secret management (WiFi passwords, Signal, etc.)
   services.gnome.gnome-keyring.enable = true;
   security.polkit.enable = true;
+  security.pam.services.login.enableGnomeKeyring = true;
+
+  # XDG Desktop Portal configuration for app integration
+  xdg.portal = {
+    enable = true;
+    wlr.enable = true;
+    extraPortals = with pkgs; [
+      xdg-desktop-portal-gtk
+      xdg-desktop-portal-gnome
+    ];
+    config = {
+      common.default = "*";
+      niri = {
+        default = ["gnome" "gtk"];
+        "org.freedesktop.impl.portal.Screenshot" = ["gnome"];
+      };
+    };
+  };
+
+  environment.sessionVariables = {
+    NIXOS_OZONE_WL = "1";
+    ELECTRON_OZONE_PLATFORM_HINT = "auto";
+  };
 
   # Enable the KDE Plasma Desktop Environment.
   services.displayManager.sddm.enable = true;
@@ -206,6 +230,7 @@
     uv
     microsoft-edge
     signal-desktop
+    libsecret
     #jetbrains.pycharm-professional
     obsidian
     discord
@@ -222,6 +247,11 @@
 
     gemini-cli
     tmux
+    feh
+
+    #codex
+
+    inputs.openai-codex.packages.${pkgs.system}.openai-codex
 
     (pkgs.anki.withAddons [
       # Specify the anki-connect add-on and provide its configuration
