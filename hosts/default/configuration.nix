@@ -40,7 +40,7 @@
   #services.ollama.enable = true;
   #services.ollama.acceleration = "cuda"; # enable nvidia driver
   hardware.graphics.enable = true;
-  hardware.nvidia.open = true;
+  hardware.nvidia.open = false;
   hardware.opengl.enable = true;
   services.xserver.videoDrivers = [ "nvidia" ];
 
@@ -253,6 +253,15 @@
     luaPackages.luarocks
     #datanvim>
 
+    zoom-us
+    yt-dlp
+
+    # Common scientific / desktop calculators
+    qalculate-gtk
+    speedcrunch
+    kdePackages.kcalc
+    gnome-calculator
+    xcalc
  ];
 
 

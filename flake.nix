@@ -39,6 +39,10 @@
     #niri
     niri-session-manager.url = "github:MTeaHead/niri-session-manager";
 
+
+    #inputs.zotero-nix.url = "github:camillemndn/zotero-nix";
+
+
   };
 
   outputs = { self, nixpkgs, home-manager, lazyvim, niri-session-manager, ... }@inputs: {
@@ -61,6 +65,10 @@
           # This is not a complete NixOS configuration; reference your normal configuration here.
           # Import the module
           niri-session-manager.nixosModules.niri-session-manager
+
+          #<zotero
+          #environment.systemPackages = [ zotero-nix.packages.${system}.default ];
+          #zotero>
 
           ({
             # Enable the service
