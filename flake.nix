@@ -49,9 +49,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    lmstudio.url = "github:tomsch/lmstudio-nix";
+
   };
 
-  outputs = { self, nixpkgs, home-manager, lazyvim, niri-session-manager, ... }@inputs: {
+  outputs = { self, nixpkgs, home-manager, lazyvim, niri-session-manager,
+        lmstudio, ... }@inputs: {
     # use "nixos", or your hostname as the name of the configuration
     # it's a better practice than "default" shown in the video
     nixosConfigurations.nixtars = nixpkgs.lib.nixosSystem {
@@ -59,7 +62,7 @@
       modules = [
         ./hosts/default/configuration.nix
         inputs.home-manager.nixosModules.default
-	  #inputs.nix-pia-vpn.nixosModules.default
+	#inputs.nix-pia-vpn.nixosModules.default
       ];
     };
   };

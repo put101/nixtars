@@ -31,6 +31,8 @@
     ];
   };
 
+  nix.settings.experimental-features = ["nix-command" "flakes" ];
+
   #services.pia-vpn = {
   #  enable = true;
   #  certificateFile = toString ../../secrets/ca.rsa.4096.crt;
@@ -38,11 +40,11 @@
   #};
 
 
-  #services.ollama.enable = true;
+  services.ollama.enable = true;
   #services.ollama.acceleration = "cuda"; # enable nvidia driver
+
   hardware.graphics.enable = true;
   hardware.nvidia.open = false;
-  hardware.opengl.enable = true;
   services.xserver.videoDrivers = [ "nvidia" ];
 
   # Bootloader.
@@ -58,9 +60,8 @@
 
   # Enable networking
   networking.networkmanager.enable = true;
-  nix.settings.experimental-features = ["nix-command" "flakes" ];
-
   virtualisation.docker.enable = true;
+
 
 
   # Set your time zone.
@@ -84,33 +85,6 @@
   # Enable the X11 windowing system.
   # You can disable this if you're only using the Wayland session.
   services.xserver.enable = true;
-
-  # Enable gnome-keyring for secret management (WiFi passwords, Signal, etc.)
-  services.gnome.gnome-keyring.enable = true;
-  security.polkit.enable = true;
-  security.pam.services.login.enableGnomeKeyring = true;
-
-  # XDG Desktop Portal configuration for app integration
-  xdg.portal = {
-    enable = true;
-    wlr.enable = true;
-    extraPortals = with pkgs; [
-      xdg-desktop-portal-gtk
-      xdg-desktop-portal-gnome
-    ];
-    config = {
-      common.default = "*";
-      niri = {
-        default = ["gnome" "gtk"];
-        "org.freedesktop.impl.portal.Screenshot" = ["gnome"];
-      };
-    };
-  };
-
-  environment.sessionVariables = {
-    NIXOS_OZONE_WL = "1";
-    ELECTRON_OZONE_PLATFORM_HINT = "auto";
-  };
 
   # Enable the KDE Plasma Desktop Environment.
   services.displayManager.sddm.enable = true;
@@ -173,11 +147,16 @@
   };
 
   home-manager = {
-	  # also pass inputs to home-manager modules
-	  extraSpecialArgs = {inherit inputs;};
-	  users = {
-	    "tobi" = import ./home.nix;
-	  };
+    # also pass inputs to home-manager modules
+    extraSpecialArgs = { inherit inputs; };
+
+    # Backup pre-existing dotfiles instead of failing activation.
+    # Example: ~/.gtkrc-2.0 -> ~/.gtkrc-2.0.hm-bak
+    backupFileExtension = "hm-bak";
+
+    users = {
+      "tobi" = import ./home.nix;
+    };
   };
 
   # Install firefox.
@@ -204,6 +183,14 @@
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
   #nixpkgs.config.cudaSupport = true;
+  
+
+  environment.shellAliases = {
+    ll = "ls -alF";
+    gs = "git status";
+    build = "sudo nixos-rebuild switch --flake .#nixtars";
+  };
+
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
@@ -230,7 +217,6 @@
     uv
     microsoft-edge
     signal-desktop
-    libsecret
     #jetbrains.pycharm-professional
     obsidian
     discord
@@ -246,12 +232,10 @@
     #fish>
 
     gemini-cli
+    copilot-cli
     tmux
-    feh
-
-    #codex
-
-    inputs.openai-codex.packages.${pkgs.system}.openai-codex
+    opencode
+    yazi
 
     (pkgs.anki.withAddons [
       # Specify the anki-connect add-on and provide its configuration
@@ -269,9 +253,9 @@
         };
       })
     ])
-    #cudaPackages.cudatoolkit
-    #cudaPackages.cudnn
-    #cudaPackages.nccl
+    cudaPackages.cudatoolkit
+    cudaPackages.cudnn
+    cudaPackages.nccl
 
     # screenshot plasma issue -> use https://wiki.nixos.org/wiki/Flameshot
     grim
@@ -289,13 +273,8 @@
 
     zoom-us
     yt-dlp
-
-    # Common scientific / desktop calculators
-    qalculate-gtk
-    speedcrunch
-    kdePackages.kcalc
-    gnome-calculator
-    xcalc
+    inputs.lmstudio.packages.x86_64-linux.default
+    open-webui
  ];
 
 

@@ -1,5 +1,4 @@
 { config, pkgs, inputs, lib, ... }:
-
 {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
@@ -87,8 +86,12 @@
 
   programs.git = {
     enable = true;
-    userName = "Tobias";
-    userEmail = "tobiaspucher@gmail.com";
+    settings = {
+      user = {
+        name = "Tobias";
+        email = "tobiaspucher@gmail.com";
+      };
+    };
   };
 
   programs.gh = {

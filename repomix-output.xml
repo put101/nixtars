@@ -40,6 +40,13 @@ The content is organized as follows:
 </file_summary>
 
 <directory_structure>
+.cache/
+  nix/
+    eval-cache-v6/
+      4806ae512ab8dde6da2112524fbbf56b1de8f5e8caae7ee3321957ba7c78e7f7.sqlite
+      aa5d2bc475821d184209c03fa3ecde572f8e5943b1489955c571e895b34830ef.sqlite
+      cc4455bab9584a621edf9f1c325132a4b11575e1621cfcaf7b5fb3f4790c8282.sqlite
+    fetcher-cache-v4.sqlite
 .direnv/
   bin/
     nix-direnv-reload
@@ -48,7 +55,6 @@ hosts/
     waybar/
       default.nix
       style.css
-    .configuration.nix.kate-swp
     config.kdl
     configuration.nix
     home.nix
@@ -58,6 +64,7 @@ secrets/
   ca.rsa.4096.crt
   pia.env
 .gitignore
+AGENTS.md
 build.sh
 flake.lock
 flake.nix
@@ -69,6 +76,34 @@ wallpaper.png
 
 <files>
 This section contains the contents of the repository's files.
+
+<file path="AGENTS.md">
+# Repository Guidelines
+
+## Project Structure & Module Organization
+`flake.nix` is the single entry point; it pins `nixos-unstable`, wires in `home-manager`, `nvf`, `stylix`, and exports the `nixtars` configuration. Host-specific logic lives under `hosts/default/` with `configuration.nix` for system services, `home.nix` for the user profile, `nvf.nix` for Neovim, and `waybar/` plus `config.kdl` for UI tweaks. Keep shared assets (e.g., `wallpaper.png`, VPN material in `secrets/`) in place because their paths are referenced directly inside those modules.
+
+## Build, Test, and Development Commands
+- `./build.sh` or `nixos-rebuild switch --flake .#nixtars` applies the full system profile. Run it after any Nix module edit.
+- `nixos-rebuild dry-activate --flake .#nixtars` validates evaluation without touching the system, ideal for CI-style checks.
+- `nixos-rebuild test --flake .#nixtars` boots the new generation in a transient session; use it before risky hardware or display tweaks.
+- `home-manager switch --flake .#nixtars` replays just the Home Manager layer when touching `home.nix`, `nvf.nix`, or `waybar/`.
+
+## Coding Style & Naming Conventions
+Stick to two-space indentation in `.nix` files, align attribute assignments, and keep option blocks grouped logically (see `hosts/default/configuration.nix`). Derivations and module names stay lowercase with hyphen-separated words (`stylix.nix`, `home.nix`). Prefer helper functions from `lib` for overrides (`lib.mkForce`, `lib.mkDefault`). Run `nix fmt` or `nixpkgs-fmt` before committing, and keep KDL/CSS files wrapped at roughly 100 columns.
+
+## Testing Guidelines
+There is no automated test suite; validation happens through Nix builds. Always run `nixos-rebuild dry-activate` before `switch` to catch evaluation errors early, and add `--show-trace` when diagnosing module failures. For graphical configs (`hosts/default/config.kdl`, `waybar/style.css`), launch `niri` or `waybar` under a nested session (`dbus-run-session niri --config hosts/default/config.kdl`) to verify bindings without impacting the main seat.
+
+## Commit & Pull Request Guidelines
+Recent history (`git log`) favors short, lowercase, imperative subject lines (“niri”, “added nvf, codex”). Follow that style, scope commits narrowly, and reference affected modules in the subject if possible (`waybar: adjust battery widget`). Pull requests should include a short summary, the command output used for validation (e.g., `nixos-rebuild test`), linked issues or TODO references, and screenshots for UI adjustments.
+
+## Security & Secrets
+Files under `secrets/` (VPN env and certificates) are referenced by commented service stanzas. Never commit real credentials; replace them with sample placeholders or keep them untracked via `git update-index --skip-worktree`. When sharing logs, scrub hostnames, session sockets, and `niri` paths to avoid leaking environment details.
+
+## NVF Troubleshooting Notes
+The NVF profile mirrors the upstream maximal template (`hosts/default/nvf.nix`) and writes persistent Neovim logs to `~/.local/state/nvf/nvim.log` plus per-plugin logs (e.g., `luasnip.log`, `nio.log`). A custom `vim.notify` shim sends every warning/error into `~/.local/state/nvf/notify.log`, which appears after the first notification is emitted. To capture issues, reproduce them, then run `tail -F ~/.local/state/nvf/{nvim,notify}.log` and attach the resulting files. If `nvim-treesitter` errors mention missing `ts_utils`, ensure `vim.treesitter.enable = true` stayed in the config; disabling it removes the plugin and breaks dependent modules.
+</file>
 
 <file path=".direnv/bin/nix-direnv-reload">
 #!/usr/bin/env bash
@@ -318,6 +353,37 @@ tooltip label {
 { config, pkgs, lib, ... }:
 let
   isMaximal = true;
+  nvimStateDir = "${config.home.homeDirectory}/.local/state/nvf";
+  nvimLogFile = "${nvimStateDir}/nvim.log";
+  notifyLogFile = "${nvimStateDir}/notify.log";
+  fallbackPython = pkgs.python311.withPackages (ps: with ps; [
+    ipython
+    debugpy
+  ]);
+  uvPython = pkgs.writeShellApplication {
+    name = "uv-python";
+    runtimeInputs = [ pkgs.uv fallbackPython ];
+    text = ''
+      set -euo pipefail
+      if [ -f pyproject.toml ] || [ -f uv.lock ] || [ -f requirements.txt ]; then
+        exec ${pkgs.uv}/bin/uv run python "$@"
+      else
+        exec ${fallbackPython}/bin/python "$@"
+      fi
+    '';
+  };
+  uvIpython = pkgs.writeShellApplication {
+    name = "uv-ipython";
+    runtimeInputs = [ pkgs.uv fallbackPython ];
+    text = ''
+      set -euo pipefail
+      if [ -f pyproject.toml ] || [ -f uv.lock ] || [ -f requirements.txt ]; then
+        exec ${pkgs.uv}/bin/uv run ipython "$@"
+      else
+        exec ${fallbackPython}/bin/ipython "$@"
+      fi
+    '';
+  };
 in
 {
   programs.nvf = {
@@ -329,9 +395,9 @@ in
       vimAlias = true;
 
       debugMode = {
-        enable = false;
+        enable = true;
         level = 16;
-        logFile = "/tmp/nvim.log";
+        logFile = nvimLogFile;
       };
 
       spellcheck = {
@@ -342,27 +408,25 @@ in
       lsp = {
         enable = true;
         formatOnSave = true;
+        lspkind.enable = false;
         lightbulb.enable = true;
         lspsaga.enable = false;
         trouble.enable = true;
-        lspSignature.enable = !isMaximal; # conflicts with blink/otter in maximal
+        lspSignature.enable = !isMaximal;
         otter-nvim.enable = isMaximal;
         nvim-docs-view.enable = isMaximal;
+        harper-ls.enable = isMaximal;
       };
 
-      debugger = {
-        nvim-dap = {
-          enable = true;
-          ui.enable = true;
-        };
+      debugger.nvim-dap = {
+        enable = true;
+        ui.enable = true;
       };
 
       languages = {
         enableFormat = true;
         enableTreesitter = true;
         enableExtraDiagnostics = true;
-
-        # Languages enabled in maximal config
         nix.enable = true;
         markdown.enable = true;
         bash.enable = isMaximal;
@@ -381,44 +445,202 @@ in
         typst.enable = isMaximal;
         rust = {
           enable = isMaximal;
-          crates.enable = isMaximal;
+          extensions."crates-nvim".enable = isMaximal;
         };
         toml.enable = isMaximal;
+        assembly.enable = false;
+        astro.enable = false;
+        nu.enable = false;
+        csharp.enable = false;
+        julia.enable = false;
+        vala.enable = false;
+        scala.enable = false;
+        r.enable = false;
+        gleam.enable = false;
+        dart.enable = false;
+        ocaml.enable = false;
+        elixir.enable = false;
+        haskell.enable = false;
+        hcl.enable = false;
+        ruby.enable = false;
+        fsharp.enable = false;
+        just.enable = false;
+        qml.enable = false;
+        tailwind.enable = false;
+        svelte.enable = false;
+        nim.enable = false;
+      };
+
+      visuals = {
+        nvim-scrollbar.enable = isMaximal;
+        nvim-web-devicons.enable = true;
+        nvim-cursorline.enable = true;
+        cinnamon-nvim.enable = true;
+        fidget-nvim.enable = true;
+        highlight-undo.enable = true;
+        indent-blankline.enable = true;
+        cellular-automaton.enable = false;
+      };
+
+      statusline.lualine = lib.mkForce {
+        enable = true;
+        theme = "catppuccin";
+      };
+
+      theme = lib.mkForce {
+        enable = true;
+        name = "catppuccin";
+        style = "mocha";
+        transparent = false;
+      };
+
+      autopairs.nvim-autopairs.enable = true;
+
+      autocomplete = {
+        nvim-cmp.enable = !isMaximal;
+        blink-cmp.enable = isMaximal;
+      };
+
+      snippets.luasnip.enable = true;
+
+      filetree.neo-tree.enable = true;
+
+      tabline.nvimBufferline.enable = true;
+
+      treesitter = {
+        enable = true;
+        context.enable = true;
+      };
+
+      binds = {
+        whichKey.enable = true;
+        cheatsheet.enable = true;
+      };
+
+      telescope.enable = true;
+
+      git = {
+        enable = true;
+        gitsigns.enable = true;
+        gitsigns.codeActions.enable = false;
+        neogit.enable = isMaximal;
+      };
+
+      minimap = {
+        minimap-vim.enable = false;
+        codewindow.enable = isMaximal;
+      };
+
+      dashboard = {
+        dashboard-nvim.enable = false;
+        alpha.enable = isMaximal;
+      };
+
+      notify.nvim-notify.enable = true;
+
+      projects.project-nvim.enable = isMaximal;
+
+      utility = {
+        ccc.enable = false;
+        vim-wakatime.enable = false;
+        diffview-nvim.enable = true;
+        yanky-nvim.enable = false;
+        qmk-nvim.enable = false;
+        icon-picker.enable = isMaximal;
+        surround.enable = isMaximal;
+        leetcode-nvim.enable = isMaximal;
+        multicursors.enable = isMaximal;
+        smart-splits.enable = isMaximal;
+        undotree.enable = isMaximal;
+        nvim-biscuits.enable = isMaximal;
+        motion = {
+          hop.enable = true;
+          leap.enable = true;
+          precognition.enable = isMaximal;
+        };
+        images = {
+          image-nvim.enable = false;
+          img-clip.enable = isMaximal;
+        };
+      };
+
+      notes = {
+        neorg.enable = false;
+        orgmode.enable = false;
+        mind-nvim.enable = isMaximal;
+        todo-comments.enable = true;
+      };
+
+      terminal.toggleterm = {
+        enable = true;
+        lazygit.enable = true;
       };
 
       ui = {
         borders.enable = true;
         noice.enable = true;
         colorizer.enable = true;
-        modes-nvim.enable = false; # Often conflicts or is annoying
+        modes-nvim.enable = false;
         illuminate.enable = true;
-        breadcrumbs.enable = true;
-        smartcolumn.enable = true;
+        breadcrumbs = {
+          enable = isMaximal;
+          navbuddy.enable = isMaximal;
+        };
+        smartcolumn = {
+          enable = true;
+          setupOpts.custom_colorcolumn = {
+            nix = "110";
+            ruby = "120";
+            java = "130";
+            go = ["90" "130"];
+          };
+        };
         fastaction.enable = true;
       };
 
-      statusline.lualine.enable = true;
-      telescope.enable = true;
-      autocomplete.nvim-cmp.enable = true;
-      
-      # Helper for Iron.nvim (Python REPL)
-      # This is NOT part of the official maximal config yet, but essential for your request.
-      startPlugins = [ pkgs.vimPlugins.iron-nvim ];
+      assistant = {
+        chatgpt.enable = false;
+        copilot = {
+          enable = false;
+          cmp.enable = isMaximal;
+        };
+        codecompanion-nvim.enable = false;
+        avante-nvim.enable = isMaximal;
+      };
+
+      session.nvim-session-manager.enable = false;
+
+      gestures.gesture-nvim.enable = false;
+
+      comments.comment-nvim.enable = true;
+
+      presence.neocord.enable = false;
+
+      startPlugins = with pkgs.vimPlugins; [
+        iron-nvim
+        nvim-dap-python
+      ];
+
       luaConfigRC.iron = ''
         local iron = require("iron.core")
         local view = require("iron.view")
         local common = require("iron.fts.common")
+        vim.fn.mkdir("${nvimStateDir}", "p")
 
         iron.setup({
           config = {
             scratch_repl = true,
+            close_window_on_exit = true,
+            repl_open_cmd = view.split.vertical.botright(0.35),
             repl_definition = {
               python = {
-                command = {"${pkgs.python3}/bin/python3"},
+                command = {"${uvIpython}/bin/uv-ipython", "--no-autoindent"},
                 format = common.bracketed_paste_python
+              },
+              sh = {
+                command = {"${pkgs.bash}/bin/bash"}
               }
-            },
-            repl_open_cmd = view.split.vertical.botright(0.4)
+            }
           },
           keymaps = {
             send_motion = "<space>sc",
@@ -430,8 +652,40 @@ in
             clear = "<space>cl",
           },
           highlight = { italic = true },
-          ignore_blank_lines = true, 
+          ignore_blank_lines = true,
         })
+      '';
+
+      luaConfigRC.dap_python = ''
+        local dap_python = require("dap-python")
+        dap_python.setup("${uvPython}/bin/uv-python")
+        dap_python.test_runner = "pytest"
+      '';
+
+      luaConfigRC.notify_logger = ''
+        local log_path = "${notifyLogFile}"
+        local level_map = {}
+        for name, value in pairs(vim.log.levels) do
+          level_map[value] = name
+        end
+        local function append(msg, level)
+          local file = io.open(log_path, "a")
+          if file then
+            local line = string.format(
+              "%s\t%s\t%s\n",
+              os.date("%Y-%m-%d %H:%M:%S"),
+              level_map[level or vim.log.levels.INFO] or tostring(level or vim.log.levels.INFO),
+              vim.inspect(msg)
+            )
+            file:write(line)
+            file:close()
+          end
+        end
+        local original_notify = vim.notify
+        vim.notify = function(msg, level, opts)
+          append(msg, level)
+          return original_notify(msg, level, opts)
+        end
       '';
     };
   };
@@ -541,89 +795,6 @@ PIA_PROTOCOL=wireguard
 
 <file path=".gitignore">
 hardware-configuration.nix
-</file>
-
-<file path="session_diagnosis.md">
-# Session Diagnosis: Niri & NixOS Setup
-
-## 1. Niri Configuration Error (Fixed)
-**Issue:** `niri` command reported errors due to syntax error in config.
-**Fix:** Removed dangling `Mod+?` in `config.kdl`.
-**Status:** **Applied**.
-
-## 2. Networking & Wallet Issues (Fixed)
-**Issue:** Wi-Fi forgot passwords, Signal crashed.
-**Fix:** Enabled `gnome-keyring` and `polkit` in `configuration.nix`.
-**Status:** **Applied**.
-
-## 3. Visual Overhaul (In Progress)
-**Objective:** Replace default "blocky" look with a "Pro" Catppuccin-themed setup (Stylix + Custom Waybar).
-
-### Action Log
-1.  **Global Theming (Stylix):**
-    *   **Created:** `nixtars/hosts/default/stylix.nix`
-        *   **Scheme:** Catppuccin Mocha (Dark).
-        *   **Wallpaper:** `nixtars/wallpaper.png` (Forest Landscape).
-        *   **Fonts:** JetBrains Mono (Mono) & DejaVu Sans (UI).
-    *   **Modified:** `nixtars/hosts/default/configuration.nix`
-        *   Imported `./stylix.nix`.
-        *   Added `inputs.stylix.nixosModules.stylix` to imports.
-
-2.  **Custom Waybar:**
-    *   **Created:** `nixtars/hosts/default/waybar/default.nix` & `style.css`.
-        *   **Style:** Transparent background, floating pill-shaped modules, Catppuccin colors.
-        *   **Modules:** Niri Workspaces, Clock, PulseAudio, Network, Battery, Tray.
-    *   **Modified:** `nixtars/hosts/default/home.nix`
-        *   Removed simple `programs.waybar.enable = true`.
-        *   Imported `./waybar/default.nix`.
-
-### Next Steps for User
-To apply these visual changes:
-1.  Run the build script:
-    ```bash
-    cd ~/nixtars
-    ./build.sh
-    ```
-2.  Log out and log back in to see the new theme, wallpaper, and Waybar.
-
-## 4. Signal & Keyring Backend Mismatch (Fixed?)
-
-**Symptom:** Signal crashes immediately on startup.
-**Root Cause:** Niri session was not updating the DBus/Systemd environment, so `gnome-keyring` (and other user services) didn't know how to communicate with the session.
-
-**Fix Applied (Session 2):**
-1.  **Niri Autostart:** Added `dbus-update-activation-environment` and `systemctl --user import-environment` to `config.kdl` to properly initialize the session for services like `gnome-keyring`.
-2.  **System Tray:** Added `networkmanagerapplet` (nm-applet) to `home.nix` and `config.kdl` to provide the Wi-Fi tray icon.
-3.  **Clipboard/Screenshots:** Added `wl-clipboard` and `slurp` to `home.nix`.
-
-**Status:** **Applied**. Waiting for rebuild and re-login to verify.
-
-**What We Have Done (System Level):**
-*   Updated `configuration.nix` to include proper `xdg-desktop-portal` configuration (wlr, gtk, gnome) to ensure standard secret service communication works in Wayland.
-*   Explicitly enabled `gnome-keyring` integration in PAM and Polkit.
-*   Added `libsecret` and `signal-desktop` (explicitly) to system packages.
-
-## 5. Next Steps
-1.  **Build:** Run `./build.sh` to apply all changes.
-2.  **Re-login:** Exit Niri and start it again.
-3.  **Verify:**
-    *   Check if `nm-applet` appears in the tray (top right).
-    *   Check if Signal starts without crashing.
-    *   Check if `Print` key takes a screenshot (check `~/Pictures/Screenshots`).
-
-## 6. Python REPL in Neovim (NVF)
-**Objective:** Enable `iron.nvim` for Python interactive development.
-**Action:**
-*   Created `nixtars/hosts/default/nvf.nix`.
-*   Enabled `languages.python` (LSP, Formatting, Treesitter).
-*   Added `iron.nvim` to `startPlugins`.
-*   Configured `iron.nvim` with:
-    *   **Command:** `python3` (from Nix store).
-    *   **Layout:** Bottom split (40%).
-    *   **Keymaps:**
-        *   `<Space>sl`: Send Line
-        *   `<Space>sf`: Send File
-        *   `<Space>sc`: Send Selection/Motion
 </file>
 
 <file path="summary.txt">
@@ -815,6 +986,93 @@ nixos-rebuild switch --flake .#nixtars
 ```sh
 sudo nixos-rebuild switch --flake /etc/nixos/#default
 ```
+</file>
+
+<file path="build.sh">
+nixos-rebuild switch --flake .#nixtars
+</file>
+
+<file path="session_diagnosis.md">
+# Session Diagnosis: Niri & NixOS Setup
+
+## 1. Niri Configuration Error (Fixed)
+**Issue:** `niri` command reported errors due to syntax error in config.
+**Fix:** Removed dangling `Mod+?` in `config.kdl`.
+**Status:** **Applied**.
+
+## 2. Networking & Wallet Issues (Fixed)
+**Issue:** Wi-Fi forgot passwords, Signal crashed.
+**Fix:** Enabled `gnome-keyring` and `polkit` in `configuration.nix`.
+**Status:** **Applied**.
+
+## 3. Visual Overhaul (In Progress)
+**Objective:** Replace default "blocky" look with a "Pro" Catppuccin-themed setup (Stylix + Custom Waybar).
+
+### Action Log
+1.  **Global Theming (Stylix):**
+    *   **Created:** `nixtars/hosts/default/stylix.nix`
+        *   **Scheme:** Catppuccin Mocha (Dark).
+        *   **Wallpaper:** `nixtars/wallpaper.png` (Forest Landscape).
+        *   **Fonts:** JetBrains Mono (Mono) & DejaVu Sans (UI).
+    *   **Modified:** `nixtars/hosts/default/configuration.nix`
+        *   Imported `./stylix.nix`.
+        *   Added `inputs.stylix.nixosModules.stylix` to imports.
+
+2.  **Custom Waybar:**
+    *   **Created:** `nixtars/hosts/default/waybar/default.nix` & `style.css`.
+        *   **Style:** Transparent background, floating pill-shaped modules, Catppuccin colors.
+        *   **Modules:** Niri Workspaces, Clock, PulseAudio, Network, Battery, Tray.
+    *   **Modified:** `nixtars/hosts/default/home.nix`
+        *   Removed simple `programs.waybar.enable = true`.
+        *   Imported `./waybar/default.nix`.
+
+### Next Steps for User
+To apply these visual changes:
+1.  Run the build script:
+    ```bash
+    cd ~/nixtars
+    ./build.sh
+    ```
+2.  Log out and log back in to see the new theme, wallpaper, and Waybar.
+
+## 4. Signal & Keyring Backend Mismatch (Fixed?)
+
+**Symptom:** Signal crashes immediately on startup.
+**Root Cause:** Niri session was not updating the DBus/Systemd environment, so `gnome-keyring` (and other user services) didn't know how to communicate with the session.
+
+**Fix Applied (Session 2):**
+1.  **Niri Autostart:** Added `dbus-update-activation-environment` and `systemctl --user import-environment` to `config.kdl` to properly initialize the session for services like `gnome-keyring`.
+2.  **System Tray:** Added `networkmanagerapplet` (nm-applet) to `home.nix` and `config.kdl` to provide the Wi-Fi tray icon.
+3.  **Clipboard/Screenshots:** Added `wl-clipboard` and `slurp` to `home.nix`.
+
+**Status:** **Applied**. Waiting for rebuild and re-login to verify.
+
+**What We Have Done (System Level):**
+*   Updated `configuration.nix` to include proper `xdg-desktop-portal` configuration (wlr, gtk, gnome) to ensure standard secret service communication works in Wayland.
+*   Explicitly enabled `gnome-keyring` integration in PAM and Polkit.
+*   Added `libsecret` and `signal-desktop` (explicitly) to system packages.
+
+## 5. Next Steps
+1.  **Build:** Run `./build.sh` to apply all changes.
+2.  **Re-login:** Exit Niri and start it again.
+3.  **Verify:**
+    *   Check if `nm-applet` appears in the tray (top right).
+    *   Check if Signal starts without crashing.
+    *   Check if `Print` key takes a screenshot (check `~/Pictures/Screenshots`).
+
+## 6. Python REPL in Neovim (NVF)
+**Objective:** Enable `iron.nvim` for Python interactive development.
+**Action:**
+*   Created `nixtars/hosts/default/nvf.nix`.
+*   Enabled `languages.python` (LSP, Formatting, Treesitter).
+*   Added `iron.nvim` to `startPlugins`.
+*   Configured `iron.nvim` with:
+    *   **Command:** `python3` (from Nix store).
+    *   **Layout:** Bottom split (40%).
+    *   **Keymaps:**
+        *   `<Space>sl`: Send Line
+        *   `<Space>sf`: Send File
+        *   `<Space>sc`: Send Selection/Motion
 </file>
 
 <file path="hosts/default/config.kdl">
@@ -1442,8 +1700,57 @@ binds {
 }
 </file>
 
-<file path="build.sh">
-nixos-rebuild switch --flake .#nixtars
+<file path="readme.md">
+# Commands: 
+
+```sh
+sudo nixos-rebuild switch --flake /home/tobi/#nixtars
+```
+
+
+# Issues and TODOs
+
+- 
+  Summary of Findings:
+   1. Niri Config Error: You have a syntax error in ~/nixtars/hosts/default/config.kdl on
+      line 319 (Mod+? is missing an action block).
+   2. Networking & Signal Issues: Your Niri session lacks a running Secret Service (Keyring).
+      KDE Plasma provides this automatically (kwallet), but Niri does not. This prevents
+      NetworkManager from saving Wi-Fi passwords and Signal from accessing its encryption
+      keys.
+   3. Reference Comparison: Your friend 'not-matthias' explicitly enables gnome-keyring and
+      polkit in their Niri module, which is missing from your configuration.
+
+  Proposed Plan:
+   1. Fix Niri Config: Remove the broken line in config.kdl.
+   2. Enable Keyring: Add services.gnome.gnome-keyring.enable = true; to your
+      configuration.nix to handle passwords and secrets system-wide.
+      
+
+
+- [tobi@nixtars:~]$ niri
+2026-01-15T15:15:14.296571Z  INFO niri: starting version 25.11 (Nixpkgs)
+2026-01-15T15:15:14.353075Z  WARN niri:   × error loading config
+  ├─▶ error parsing
+  ╰─▶ error parsing KDL
+
+Error:   × invalid keybind
+  ├─▶ invalid keybind
+  ╰─▶ invalid key: ?
+     ╭─[config.kdl:362:1]
+ 362 │     Mod+Shift+Slash { show-hotkey-overlay; }
+ 363 │     Mod+?
+     ·     ──┬──
+     ·       ╰── invalid value
+ 364 │
+     ╰────
+
+2026-01-15T15:15:14.455333Z  WARN niri::backend::winit: error binding renderer wl_display: None of the following EGL extensions is supported by the underlying EGL implementation, at least one is required: ["EGL_WL_bind_wayland_display"]
+2026-01-15T15:15:14.476626Z DEBUG niri::niri: putting output winit at x=0 y=0
+2026-01-15T15:15:14.476672Z  INFO niri: listening on Wayland socket: wayland-2
+2026-01-15T15:15:14.476676Z  INFO niri: IPC listening on: /run/user/1000/niri.wayland-2.42094.sock
+2026-01-15T15:15:14.479010Z  INFO niri: listening on X11 socket: :1
+2026-01-15T15:15:19.189412Z DEBUG niri::utils::watcher: exiting watcher thread for Regular { user_path: "/home/tobi/.config/niri/config.kdl", system_path: "/etc/niri/config.kdl" }
 </file>
 
 <file path="flake.lock">
@@ -1651,11 +1958,11 @@ nixos-rebuild switch --flake .#nixtars
         ]
       },
       "locked": {
-        "lastModified": 1768434960,
-        "narHash": "sha256-cJbFn17oyg6qAraLr+NVeNJrXsrzJdrudkzI4H2iTcg=",
+        "lastModified": 1768598210,
+        "narHash": "sha256-kkgA32s/f4jaa4UG+2f8C225Qvclxnqs76mf8zvTVPg=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "b4d88c9ac42ae1a745283f6547701da43b6e9f9b",
+        "rev": "c47b2cc64a629f8e075de52e4742de688f930dc6",
         "type": "github"
       },
       "original": {
@@ -1680,6 +1987,24 @@ nixos-rebuild switch --flake .#nixtars
       "original": {
         "owner": "pfassina",
         "repo": "lazyvim-nix",
+        "type": "github"
+      }
+    },
+    "lmstudio": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1764965308,
+        "narHash": "sha256-QfmmXnjrJgR1/+c6I0qhwqoF+hlRR/bBpnUfi5gcZx4=",
+        "owner": "tomsch",
+        "repo": "lmstudio-nix",
+        "rev": "bd93dc81e5bea943f417c08698fe7110561250f8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tomsch",
+        "repo": "lmstudio-nix",
         "type": "github"
       }
     },
@@ -1722,7 +2047,7 @@ nixos-rebuild switch --flake .#nixtars
     },
     "niri-session-manager": {
       "inputs": {
-        "nixpkgs": "nixpkgs_2",
+        "nixpkgs": "nixpkgs_3",
         "systems": "systems_2",
         "treefmt-nix": "treefmt-nix"
       },
@@ -1758,16 +2083,16 @@ nixos-rebuild switch --flake .#nixtars
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1749619289,
-        "narHash": "sha256-qX6gXVjaCXXbcn6A9eSLUf8Fm07MgPGe5ir3++y2O1Q=",
-        "owner": "nixos",
+        "lastModified": 1768564909,
+        "narHash": "sha256-Kell/SpJYVkHWMvnhqJz/8DqQg2b6PguxVWOuadbHCc=",
+        "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "f72be405a10668b8b00937b452f2145244103ebc",
+        "rev": "e4bae1bd10c9c57b2cf517953ab70060a828ee6f",
         "type": "github"
       },
       "original": {
-        "owner": "nixos",
-        "ref": "nixpkgs-unstable",
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
         "repo": "nixpkgs",
         "type": "github"
       }
@@ -1790,11 +2115,27 @@ nixos-rebuild switch --flake .#nixtars
     },
     "nixpkgs_4": {
       "locked": {
-        "lastModified": 1768305791,
-        "narHash": "sha256-AIdl6WAn9aymeaH/NvBj0H9qM+XuAuYbGMZaP0zcXAQ=",
+        "lastModified": 1749619289,
+        "narHash": "sha256-qX6gXVjaCXXbcn6A9eSLUf8Fm07MgPGe5ir3++y2O1Q=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "1412caf7bf9e660f2f962917c14b1ea1c3bc695e",
+        "rev": "f72be405a10668b8b00937b452f2145244103ebc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nixos",
+        "ref": "nixpkgs-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_5": {
+      "locked": {
+        "lastModified": 1768564909,
+        "narHash": "sha256-Kell/SpJYVkHWMvnhqJz/8DqQg2b6PguxVWOuadbHCc=",
+        "owner": "nixos",
+        "repo": "nixpkgs",
+        "rev": "e4bae1bd10c9c57b2cf517953ab70060a828ee6f",
         "type": "github"
       },
       "original": {
@@ -1804,7 +2145,7 @@ nixos-rebuild switch --flake .#nixtars
         "type": "github"
       }
     },
-    "nixpkgs_5": {
+    "nixpkgs_6": {
       "locked": {
         "lastModified": 1767767207,
         "narHash": "sha256-Mj3d3PfwltLmukFal5i3fFt27L6NiKXdBezC1EBuZs4=",
@@ -1870,13 +2211,35 @@ nixos-rebuild switch --flake .#nixtars
         "type": "github"
       }
     },
+    "openai-codex": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1763033700,
+        "narHash": "sha256-fPYHdrFsHWsosfsIpq3KZhg2P8NiOptXGFH0ukvWSIc=",
+        "owner": "GutMutCode",
+        "repo": "openai-codex-nix",
+        "rev": "dbd25545bcf6ac93e03be49ef849b6da0a0f32e8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "GutMutCode",
+        "repo": "openai-codex-nix",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "home-manager": "home-manager",
         "lazyvim": "lazyvim",
+        "lmstudio": "lmstudio",
         "niri-session-manager": "niri-session-manager",
-        "nixpkgs": "nixpkgs_4",
+        "nixpkgs": "nixpkgs_5",
         "nvf": "nvf",
+        "openai-codex": "openai-codex",
         "stylix": "stylix"
       }
     },
@@ -1889,7 +2252,7 @@ nixos-rebuild switch --flake .#nixtars
         "firefox-gnome-theme": "firefox-gnome-theme",
         "flake-parts": "flake-parts_2",
         "gnome-shell": "gnome-shell",
-        "nixpkgs": "nixpkgs_5",
+        "nixpkgs": "nixpkgs_6",
         "nur": "nur",
         "systems": "systems_4",
         "tinted-foot": "tinted-foot",
@@ -1899,11 +2262,11 @@ nixos-rebuild switch --flake .#nixtars
         "tinted-zed": "tinted-zed"
       },
       "locked": {
-        "lastModified": 1768492720,
-        "narHash": "sha256-aHos307HyVtOriYZppyUjrkcEKQzyp9F5WzxpMjPFH8=",
+        "lastModified": 1768603455,
+        "narHash": "sha256-ih6dYNhX1oSg0emfSAvf3iRcgsJtMmS6RUaoCX8kNoU=",
         "owner": "danth",
         "repo": "stylix",
-        "rev": "5287bc719dbb6efb26f48c1677a221c966a4a4d9",
+        "rev": "590e5c68c4d5e8c766420473c0185d75113f653b",
         "type": "github"
       },
       "original": {
@@ -2055,7 +2418,7 @@ nixos-rebuild switch --flake .#nixtars
     },
     "treefmt-nix": {
       "inputs": {
-        "nixpkgs": "nixpkgs_3"
+        "nixpkgs": "nixpkgs_4"
       },
       "locked": {
         "lastModified": 1732894027,
@@ -2124,10 +2487,17 @@ nixos-rebuild switch --flake .#nixtars
 
     #inputs.zotero-nix.url = "github:camillemndn/zotero-nix";
 
+    openai-codex = {
+      url = "github:GutMutCode/openai-codex-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    lmstudio.url = "github:tomsch/lmstudio-nix";
 
   };
 
-  outputs = { self, nixpkgs, home-manager, lazyvim, niri-session-manager, ... }@inputs: {
+  outputs = { self, nixpkgs, home-manager, lazyvim, niri-session-manager,
+        lmstudio, ... }@inputs: {
     # use "nixos", or your hostname as the name of the configuration
     # it's a better practice than "default" shown in the video
     nixosConfigurations.nixtars = nixpkgs.lib.nixosSystem {
@@ -2135,69 +2505,15 @@ nixos-rebuild switch --flake .#nixtars
       modules = [
         ./hosts/default/configuration.nix
         inputs.home-manager.nixosModules.default
-	  #inputs.nix-pia-vpn.nixosModules.default
+	#inputs.nix-pia-vpn.nixosModules.default
       ];
     };
   };
 }
 </file>
 
-<file path="readme.md">
-# Commands: 
-
-```sh
-sudo nixos-rebuild switch --flake /home/tobi/#nixtars
-```
-
-
-# Issues and TODOs
-
-- 
-  Summary of Findings:
-   1. Niri Config Error: You have a syntax error in ~/nixtars/hosts/default/config.kdl on
-      line 319 (Mod+? is missing an action block).
-   2. Networking & Signal Issues: Your Niri session lacks a running Secret Service (Keyring).
-      KDE Plasma provides this automatically (kwallet), but Niri does not. This prevents
-      NetworkManager from saving Wi-Fi passwords and Signal from accessing its encryption
-      keys.
-   3. Reference Comparison: Your friend 'not-matthias' explicitly enables gnome-keyring and
-      polkit in their Niri module, which is missing from your configuration.
-
-  Proposed Plan:
-   1. Fix Niri Config: Remove the broken line in config.kdl.
-   2. Enable Keyring: Add services.gnome.gnome-keyring.enable = true; to your
-      configuration.nix to handle passwords and secrets system-wide.
-      
-
-
-- [tobi@nixtars:~]$ niri
-2026-01-15T15:15:14.296571Z  INFO niri: starting version 25.11 (Nixpkgs)
-2026-01-15T15:15:14.353075Z  WARN niri:   × error loading config
-  ├─▶ error parsing
-  ╰─▶ error parsing KDL
-
-Error:   × invalid keybind
-  ├─▶ invalid keybind
-  ╰─▶ invalid key: ?
-     ╭─[config.kdl:362:1]
- 362 │     Mod+Shift+Slash { show-hotkey-overlay; }
- 363 │     Mod+?
-     ·     ──┬──
-     ·       ╰── invalid value
- 364 │
-     ╰────
-
-2026-01-15T15:15:14.455333Z  WARN niri::backend::winit: error binding renderer wl_display: None of the following EGL extensions is supported by the underlying EGL implementation, at least one is required: ["EGL_WL_bind_wayland_display"]
-2026-01-15T15:15:14.476626Z DEBUG niri::niri: putting output winit at x=0 y=0
-2026-01-15T15:15:14.476672Z  INFO niri: listening on Wayland socket: wayland-2
-2026-01-15T15:15:14.476676Z  INFO niri: IPC listening on: /run/user/1000/niri.wayland-2.42094.sock
-2026-01-15T15:15:14.479010Z  INFO niri: listening on X11 socket: :1
-2026-01-15T15:15:19.189412Z DEBUG niri::utils::watcher: exiting watcher thread for Regular { user_path: "/home/tobi/.config/niri/config.kdl", system_path: "/etc/niri/config.kdl" }
-</file>
-
 <file path="hosts/default/home.nix">
 { config, pkgs, inputs, lib, ... }:
-
 {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
@@ -2285,8 +2601,12 @@ Error:   × invalid keybind
 
   programs.git = {
     enable = true;
-    userName = "Tobias";
-    userEmail = "tobiaspucher@gmail.com";
+    settings = {
+      user = {
+        name = "Tobias";
+        email = "tobiaspucher@gmail.com";
+      };
+    };
   };
 
   programs.gh = {
@@ -2433,6 +2753,8 @@ Error:   × invalid keybind
     ];
   };
 
+  nix.settings.experimental-features = ["nix-command" "flakes" ];
+
   #services.pia-vpn = {
   #  enable = true;
   #  certificateFile = toString ../../secrets/ca.rsa.4096.crt;
@@ -2440,11 +2762,11 @@ Error:   × invalid keybind
   #};
 
 
-  #services.ollama.enable = true;
+  services.ollama.enable = true;
   #services.ollama.acceleration = "cuda"; # enable nvidia driver
+
   hardware.graphics.enable = true;
   hardware.nvidia.open = false;
-  hardware.opengl.enable = true;
   services.xserver.videoDrivers = [ "nvidia" ];
 
   # Bootloader.
@@ -2460,9 +2782,8 @@ Error:   × invalid keybind
 
   # Enable networking
   networking.networkmanager.enable = true;
-  nix.settings.experimental-features = ["nix-command" "flakes" ];
-
   virtualisation.docker.enable = true;
+
 
 
   # Set your time zone.
@@ -2486,33 +2807,6 @@ Error:   × invalid keybind
   # Enable the X11 windowing system.
   # You can disable this if you're only using the Wayland session.
   services.xserver.enable = true;
-
-  # Enable gnome-keyring for secret management (WiFi passwords, Signal, etc.)
-  services.gnome.gnome-keyring.enable = true;
-  security.polkit.enable = true;
-  security.pam.services.login.enableGnomeKeyring = true;
-
-  # XDG Desktop Portal configuration for app integration
-  xdg.portal = {
-    enable = true;
-    wlr.enable = true;
-    extraPortals = with pkgs; [
-      xdg-desktop-portal-gtk
-      xdg-desktop-portal-gnome
-    ];
-    config = {
-      common.default = "*";
-      niri = {
-        default = ["gnome" "gtk"];
-        "org.freedesktop.impl.portal.Screenshot" = ["gnome"];
-      };
-    };
-  };
-
-  environment.sessionVariables = {
-    NIXOS_OZONE_WL = "1";
-    ELECTRON_OZONE_PLATFORM_HINT = "auto";
-  };
 
   # Enable the KDE Plasma Desktop Environment.
   services.displayManager.sddm.enable = true;
@@ -2575,11 +2869,16 @@ Error:   × invalid keybind
   };
 
   home-manager = {
-	  # also pass inputs to home-manager modules
-	  extraSpecialArgs = {inherit inputs;};
-	  users = {
-	    "tobi" = import ./home.nix;
-	  };
+    # also pass inputs to home-manager modules
+    extraSpecialArgs = { inherit inputs; };
+
+    # Backup pre-existing dotfiles instead of failing activation.
+    # Example: ~/.gtkrc-2.0 -> ~/.gtkrc-2.0.hm-bak
+    backupFileExtension = "hm-bak";
+
+    users = {
+      "tobi" = import ./home.nix;
+    };
   };
 
   # Install firefox.
@@ -2606,6 +2905,14 @@ Error:   × invalid keybind
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
   #nixpkgs.config.cudaSupport = true;
+  
+
+  environment.shellAliases = {
+    ll = "ls -alF";
+    gs = "git status";
+    build = "sudo nixos-rebuild switch --flake .#nixtars";
+  };
+
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
@@ -2632,7 +2939,6 @@ Error:   × invalid keybind
     uv
     microsoft-edge
     signal-desktop
-    libsecret
     #jetbrains.pycharm-professional
     obsidian
     discord
@@ -2648,9 +2954,10 @@ Error:   × invalid keybind
     #fish>
 
     gemini-cli
+    copilot-cli
     tmux
-    feh
-
+    opencode
+    yazi
 
     (pkgs.anki.withAddons [
       # Specify the anki-connect add-on and provide its configuration
@@ -2668,9 +2975,9 @@ Error:   × invalid keybind
         };
       })
     ])
-    #cudaPackages.cudatoolkit
-    #cudaPackages.cudnn
-    #cudaPackages.nccl
+    cudaPackages.cudatoolkit
+    cudaPackages.cudnn
+    cudaPackages.nccl
 
     # screenshot plasma issue -> use https://wiki.nixos.org/wiki/Flameshot
     grim
@@ -2688,13 +2995,8 @@ Error:   × invalid keybind
 
     zoom-us
     yt-dlp
-
-    # Common scientific / desktop calculators
-    qalculate-gtk
-    speedcrunch
-    kdePackages.kcalc
-    gnome-calculator
-    xcalc
+    inputs.lmstudio.packages.x86_64-linux.default
+    open-webui
  ];
 
 
