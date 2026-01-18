@@ -17,11 +17,10 @@
   services.blueman.enable = true;
   services.libinput.mouse.horizontalScrolling = true;
 
-
   nix.settings = {
     trusted-users = [ "root" "tobi" ];
     substituters = [
-            "https://cache.nixos.org"
+      "https://cache.nixos.org"
       "https://nix-community.cachix.org"
       "https://cuda-maintainers.cachix.org"
     ];
@@ -122,13 +121,7 @@
     packages = with pkgs; [
       noto-fonts
       liberation_ttf
-      nerd-fonts.fira-code
-      nerd-fonts.droid-sans-mono
-      nerd-fonts.hack
-      nerd-fonts.lilex
-      nerd-fonts._0xproto
-      nerd-fonts.ubuntu
-    ];
+    ] ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
   };
 
 
@@ -184,6 +177,12 @@
   nixpkgs.config.allowUnfree = true;
   #nixpkgs.config.cudaSupport = true;
   
+
+  # Fix uv standalone Python SSL on NixOS.
+  # uv's Python looks for CA certificates at /etc/ssl/cert.pem, but NixOS typically provides
+  # /etc/ssl/certs/ca-bundle.crt (or /etc/ssl/certs/ca-certificates.crt).
+  # This creates /etc/ssl/cert.pem as a symlink managed by NixOS.
+  environment.etc."ssl/cert.pem".source = "/etc/ssl/certs/ca-bundle.crt";
 
   environment.shellAliases = {
     ll = "ls -alF";

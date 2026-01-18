@@ -77,34 +77,6 @@ wallpaper.png
 <files>
 This section contains the contents of the repository's files.
 
-<file path="AGENTS.md">
-# Repository Guidelines
-
-## Project Structure & Module Organization
-`flake.nix` is the single entry point; it pins `nixos-unstable`, wires in `home-manager`, `nvf`, `stylix`, and exports the `nixtars` configuration. Host-specific logic lives under `hosts/default/` with `configuration.nix` for system services, `home.nix` for the user profile, `nvf.nix` for Neovim, and `waybar/` plus `config.kdl` for UI tweaks. Keep shared assets (e.g., `wallpaper.png`, VPN material in `secrets/`) in place because their paths are referenced directly inside those modules.
-
-## Build, Test, and Development Commands
-- `./build.sh` or `nixos-rebuild switch --flake .#nixtars` applies the full system profile. Run it after any Nix module edit.
-- `nixos-rebuild dry-activate --flake .#nixtars` validates evaluation without touching the system, ideal for CI-style checks.
-- `nixos-rebuild test --flake .#nixtars` boots the new generation in a transient session; use it before risky hardware or display tweaks.
-- `home-manager switch --flake .#nixtars` replays just the Home Manager layer when touching `home.nix`, `nvf.nix`, or `waybar/`.
-
-## Coding Style & Naming Conventions
-Stick to two-space indentation in `.nix` files, align attribute assignments, and keep option blocks grouped logically (see `hosts/default/configuration.nix`). Derivations and module names stay lowercase with hyphen-separated words (`stylix.nix`, `home.nix`). Prefer helper functions from `lib` for overrides (`lib.mkForce`, `lib.mkDefault`). Run `nix fmt` or `nixpkgs-fmt` before committing, and keep KDL/CSS files wrapped at roughly 100 columns.
-
-## Testing Guidelines
-There is no automated test suite; validation happens through Nix builds. Always run `nixos-rebuild dry-activate` before `switch` to catch evaluation errors early, and add `--show-trace` when diagnosing module failures. For graphical configs (`hosts/default/config.kdl`, `waybar/style.css`), launch `niri` or `waybar` under a nested session (`dbus-run-session niri --config hosts/default/config.kdl`) to verify bindings without impacting the main seat.
-
-## Commit & Pull Request Guidelines
-Recent history (`git log`) favors short, lowercase, imperative subject lines (“niri”, “added nvf, codex”). Follow that style, scope commits narrowly, and reference affected modules in the subject if possible (`waybar: adjust battery widget`). Pull requests should include a short summary, the command output used for validation (e.g., `nixos-rebuild test`), linked issues or TODO references, and screenshots for UI adjustments.
-
-## Security & Secrets
-Files under `secrets/` (VPN env and certificates) are referenced by commented service stanzas. Never commit real credentials; replace them with sample placeholders or keep them untracked via `git update-index --skip-worktree`. When sharing logs, scrub hostnames, session sockets, and `niri` paths to avoid leaking environment details.
-
-## NVF Troubleshooting Notes
-The NVF profile mirrors the upstream maximal template (`hosts/default/nvf.nix`) and writes persistent Neovim logs to `~/.local/state/nvf/nvim.log` plus per-plugin logs (e.g., `luasnip.log`, `nio.log`). A custom `vim.notify` shim sends every warning/error into `~/.local/state/nvf/notify.log`, which appears after the first notification is emitted. To capture issues, reproduce them, then run `tail -F ~/.local/state/nvf/{nvim,notify}.log` and attach the resulting files. If `nvim-treesitter` errors mention missing `ts_utils`, ensure `vim.treesitter.enable = true` stayed in the config; disabling it removes the plugin and breaks dependent modules.
-</file>
-
 <file path=".direnv/bin/nix-direnv-reload">
 #!/usr/bin/env bash
 set -e
@@ -349,349 +321,6 @@ tooltip label {
 }
 </file>
 
-<file path="hosts/default/nvf.nix">
-{ config, pkgs, lib, ... }:
-let
-  isMaximal = true;
-  nvimStateDir = "${config.home.homeDirectory}/.local/state/nvf";
-  nvimLogFile = "${nvimStateDir}/nvim.log";
-  notifyLogFile = "${nvimStateDir}/notify.log";
-  fallbackPython = pkgs.python311.withPackages (ps: with ps; [
-    ipython
-    debugpy
-  ]);
-  uvPython = pkgs.writeShellApplication {
-    name = "uv-python";
-    runtimeInputs = [ pkgs.uv fallbackPython ];
-    text = ''
-      set -euo pipefail
-      if [ -f pyproject.toml ] || [ -f uv.lock ] || [ -f requirements.txt ]; then
-        exec ${pkgs.uv}/bin/uv run python "$@"
-      else
-        exec ${fallbackPython}/bin/python "$@"
-      fi
-    '';
-  };
-  uvIpython = pkgs.writeShellApplication {
-    name = "uv-ipython";
-    runtimeInputs = [ pkgs.uv fallbackPython ];
-    text = ''
-      set -euo pipefail
-      if [ -f pyproject.toml ] || [ -f uv.lock ] || [ -f requirements.txt ]; then
-        exec ${pkgs.uv}/bin/uv run ipython "$@"
-      else
-        exec ${fallbackPython}/bin/ipython "$@"
-      fi
-    '';
-  };
-in
-{
-  programs.nvf = {
-    enable = true;
-    enableManpages = true;
-
-    settings.vim = {
-      viAlias = true;
-      vimAlias = true;
-
-      debugMode = {
-        enable = true;
-        level = 16;
-        logFile = nvimLogFile;
-      };
-
-      spellcheck = {
-        enable = true;
-        programmingWordlist.enable = isMaximal;
-      };
-
-      lsp = {
-        enable = true;
-        formatOnSave = true;
-        lspkind.enable = false;
-        lightbulb.enable = true;
-        lspsaga.enable = false;
-        trouble.enable = true;
-        lspSignature.enable = !isMaximal;
-        otter-nvim.enable = isMaximal;
-        nvim-docs-view.enable = isMaximal;
-        harper-ls.enable = isMaximal;
-      };
-
-      debugger.nvim-dap = {
-        enable = true;
-        ui.enable = true;
-      };
-
-      languages = {
-        enableFormat = true;
-        enableTreesitter = true;
-        enableExtraDiagnostics = true;
-        nix.enable = true;
-        markdown.enable = true;
-        bash.enable = isMaximal;
-        clang.enable = isMaximal;
-        css.enable = isMaximal;
-        html.enable = isMaximal;
-        json.enable = isMaximal;
-        sql.enable = isMaximal;
-        java.enable = isMaximal;
-        kotlin.enable = isMaximal;
-        ts.enable = isMaximal;
-        go.enable = isMaximal;
-        lua.enable = isMaximal;
-        zig.enable = isMaximal;
-        python.enable = isMaximal;
-        typst.enable = isMaximal;
-        rust = {
-          enable = isMaximal;
-          extensions."crates-nvim".enable = isMaximal;
-        };
-        toml.enable = isMaximal;
-        assembly.enable = false;
-        astro.enable = false;
-        nu.enable = false;
-        csharp.enable = false;
-        julia.enable = false;
-        vala.enable = false;
-        scala.enable = false;
-        r.enable = false;
-        gleam.enable = false;
-        dart.enable = false;
-        ocaml.enable = false;
-        elixir.enable = false;
-        haskell.enable = false;
-        hcl.enable = false;
-        ruby.enable = false;
-        fsharp.enable = false;
-        just.enable = false;
-        qml.enable = false;
-        tailwind.enable = false;
-        svelte.enable = false;
-        nim.enable = false;
-      };
-
-      visuals = {
-        nvim-scrollbar.enable = isMaximal;
-        nvim-web-devicons.enable = true;
-        nvim-cursorline.enable = true;
-        cinnamon-nvim.enable = true;
-        fidget-nvim.enable = true;
-        highlight-undo.enable = true;
-        indent-blankline.enable = true;
-        cellular-automaton.enable = false;
-      };
-
-      statusline.lualine = lib.mkForce {
-        enable = true;
-        theme = "catppuccin";
-      };
-
-      theme = lib.mkForce {
-        enable = true;
-        name = "catppuccin";
-        style = "mocha";
-        transparent = false;
-      };
-
-      autopairs.nvim-autopairs.enable = true;
-
-      autocomplete = {
-        nvim-cmp.enable = !isMaximal;
-        blink-cmp.enable = isMaximal;
-      };
-
-      snippets.luasnip.enable = true;
-
-      filetree.neo-tree.enable = true;
-
-      tabline.nvimBufferline.enable = true;
-
-      treesitter = {
-        enable = true;
-        context.enable = true;
-      };
-
-      binds = {
-        whichKey.enable = true;
-        cheatsheet.enable = true;
-      };
-
-      telescope.enable = true;
-
-      git = {
-        enable = true;
-        gitsigns.enable = true;
-        gitsigns.codeActions.enable = false;
-        neogit.enable = isMaximal;
-      };
-
-      minimap = {
-        minimap-vim.enable = false;
-        codewindow.enable = isMaximal;
-      };
-
-      dashboard = {
-        dashboard-nvim.enable = false;
-        alpha.enable = isMaximal;
-      };
-
-      notify.nvim-notify.enable = true;
-
-      projects.project-nvim.enable = isMaximal;
-
-      utility = {
-        ccc.enable = false;
-        vim-wakatime.enable = false;
-        diffview-nvim.enable = true;
-        yanky-nvim.enable = false;
-        qmk-nvim.enable = false;
-        icon-picker.enable = isMaximal;
-        surround.enable = isMaximal;
-        leetcode-nvim.enable = isMaximal;
-        multicursors.enable = isMaximal;
-        smart-splits.enable = isMaximal;
-        undotree.enable = isMaximal;
-        nvim-biscuits.enable = isMaximal;
-        motion = {
-          hop.enable = true;
-          leap.enable = true;
-          precognition.enable = isMaximal;
-        };
-        images = {
-          image-nvim.enable = false;
-          img-clip.enable = isMaximal;
-        };
-      };
-
-      notes = {
-        neorg.enable = false;
-        orgmode.enable = false;
-        mind-nvim.enable = isMaximal;
-        todo-comments.enable = true;
-      };
-
-      terminal.toggleterm = {
-        enable = true;
-        lazygit.enable = true;
-      };
-
-      ui = {
-        borders.enable = true;
-        noice.enable = true;
-        colorizer.enable = true;
-        modes-nvim.enable = false;
-        illuminate.enable = true;
-        breadcrumbs = {
-          enable = isMaximal;
-          navbuddy.enable = isMaximal;
-        };
-        smartcolumn = {
-          enable = true;
-          setupOpts.custom_colorcolumn = {
-            nix = "110";
-            ruby = "120";
-            java = "130";
-            go = ["90" "130"];
-          };
-        };
-        fastaction.enable = true;
-      };
-
-      assistant = {
-        chatgpt.enable = false;
-        copilot = {
-          enable = false;
-          cmp.enable = isMaximal;
-        };
-        codecompanion-nvim.enable = false;
-        avante-nvim.enable = isMaximal;
-      };
-
-      session.nvim-session-manager.enable = false;
-
-      gestures.gesture-nvim.enable = false;
-
-      comments.comment-nvim.enable = true;
-
-      presence.neocord.enable = false;
-
-      startPlugins = with pkgs.vimPlugins; [
-        iron-nvim
-        nvim-dap-python
-      ];
-
-      luaConfigRC.iron = ''
-        local iron = require("iron.core")
-        local view = require("iron.view")
-        local common = require("iron.fts.common")
-        vim.fn.mkdir("${nvimStateDir}", "p")
-
-        iron.setup({
-          config = {
-            scratch_repl = true,
-            close_window_on_exit = true,
-            repl_open_cmd = view.split.vertical.botright(0.35),
-            repl_definition = {
-              python = {
-                command = {"${uvIpython}/bin/uv-ipython", "--no-autoindent"},
-                format = common.bracketed_paste_python
-              },
-              sh = {
-                command = {"${pkgs.bash}/bin/bash"}
-              }
-            }
-          },
-          keymaps = {
-            send_motion = "<space>sc",
-            visual_send = "<space>sc",
-            send_file = "<space>sf",
-            send_line = "<space>sl",
-            interrupt = "<space>si",
-            exit = "<space>sq",
-            clear = "<space>cl",
-          },
-          highlight = { italic = true },
-          ignore_blank_lines = true,
-        })
-      '';
-
-      luaConfigRC.dap_python = ''
-        local dap_python = require("dap-python")
-        dap_python.setup("${uvPython}/bin/uv-python")
-        dap_python.test_runner = "pytest"
-      '';
-
-      luaConfigRC.notify_logger = ''
-        local log_path = "${notifyLogFile}"
-        local level_map = {}
-        for name, value in pairs(vim.log.levels) do
-          level_map[value] = name
-        end
-        local function append(msg, level)
-          local file = io.open(log_path, "a")
-          if file then
-            local line = string.format(
-              "%s\t%s\t%s\n",
-              os.date("%Y-%m-%d %H:%M:%S"),
-              level_map[level or vim.log.levels.INFO] or tostring(level or vim.log.levels.INFO),
-              vim.inspect(msg)
-            )
-            file:write(line)
-            file:close()
-          end
-        end
-        local original_notify = vim.notify
-        vim.notify = function(msg, level, opts)
-          append(msg, level)
-          return original_notify(msg, level, opts)
-        end
-      '';
-    };
-  };
-}
-</file>
-
 <file path="hosts/default/stylix.nix">
 { pkgs, inputs, ... }: {
   imports = [ inputs.stylix.nixosModules.stylix ];
@@ -795,6 +424,34 @@ PIA_PROTOCOL=wireguard
 
 <file path=".gitignore">
 hardware-configuration.nix
+</file>
+
+<file path="AGENTS.md">
+# Repository Guidelines
+
+## Project Structure & Module Organization
+`flake.nix` is the single entry point; it pins `nixos-unstable`, wires in `home-manager`, `nvf`, `stylix`, and exports the `nixtars` configuration. Host-specific logic lives under `hosts/default/` with `configuration.nix` for system services, `home.nix` for the user profile, `nvf.nix` for Neovim, and `waybar/` plus `config.kdl` for UI tweaks. Keep shared assets (e.g., `wallpaper.png`, VPN material in `secrets/`) in place because their paths are referenced directly inside those modules.
+
+## Build, Test, and Development Commands
+- `./build.sh` or `nixos-rebuild switch --flake .#nixtars` applies the full system profile. Run it after any Nix module edit.
+- `nixos-rebuild dry-activate --flake .#nixtars` validates evaluation without touching the system, ideal for CI-style checks.
+- `nixos-rebuild test --flake .#nixtars` boots the new generation in a transient session; use it before risky hardware or display tweaks.
+- `home-manager switch --flake .#nixtars` replays just the Home Manager layer when touching `home.nix`, `nvf.nix`, or `waybar/`.
+
+## Coding Style & Naming Conventions
+Stick to two-space indentation in `.nix` files, align attribute assignments, and keep option blocks grouped logically (see `hosts/default/configuration.nix`). Derivations and module names stay lowercase with hyphen-separated words (`stylix.nix`, `home.nix`). Prefer helper functions from `lib` for overrides (`lib.mkForce`, `lib.mkDefault`). Run `nix fmt` or `nixpkgs-fmt` before committing, and keep KDL/CSS files wrapped at roughly 100 columns.
+
+## Testing Guidelines
+There is no automated test suite; validation happens through Nix builds. Always run `nixos-rebuild dry-activate` before `switch` to catch evaluation errors early, and add `--show-trace` when diagnosing module failures. For graphical configs (`hosts/default/config.kdl`, `waybar/style.css`), launch `niri` or `waybar` under a nested session (`dbus-run-session niri --config hosts/default/config.kdl`) to verify bindings without impacting the main seat.
+
+## Commit & Pull Request Guidelines
+Recent history (`git log`) favors short, lowercase, imperative subject lines (“niri”, “added nvf, codex”). Follow that style, scope commits narrowly, and reference affected modules in the subject if possible (`waybar: adjust battery widget`). Pull requests should include a short summary, the command output used for validation (e.g., `nixos-rebuild test`), linked issues or TODO references, and screenshots for UI adjustments.
+
+## Security & Secrets
+Files under `secrets/` (VPN env and certificates) are referenced by commented service stanzas. Never commit real credentials; replace them with sample placeholders or keep them untracked via `git update-index --skip-worktree`. When sharing logs, scrub hostnames, session sockets, and `niri` paths to avoid leaking environment details.
+
+## NVF Troubleshooting Notes
+The NVF profile mirrors the upstream maximal template (`hosts/default/nvf.nix`) and writes persistent Neovim logs to `~/.local/state/nvf/nvim.log` plus per-plugin logs (e.g., `luasnip.log`, `nio.log`). A custom `vim.notify` shim sends every warning/error into `~/.local/state/nvf/notify.log`, which appears after the first notification is emitted. To capture issues, reproduce them, then run `tail -F ~/.local/state/nvf/{nvim,notify}.log` and attach the resulting files. If `nvim-treesitter` errors mention missing `ts_utils`, ensure `vim.treesitter.enable = true` stayed in the config; disabling it removes the plugin and breaks dependent modules.
 </file>
 
 <file path="summary.txt">
@@ -1700,6 +1357,352 @@ binds {
 }
 </file>
 
+<file path="hosts/default/nvf.nix">
+{ config, pkgs, lib, ... }:
+let
+  isMaximal = true;
+  nvimStateDir = "${config.home.homeDirectory}/.local/state/nvf";
+  nvimLogFile = "${nvimStateDir}/nvim.log";
+  notifyLogFile = "${nvimStateDir}/notify.log";
+  fallbackPython = pkgs.python311.withPackages (ps: with ps; [
+    ipython
+    debugpy
+  ]);
+  uvPython = pkgs.writeShellApplication {
+    name = "uv-python";
+    runtimeInputs = [ pkgs.uv fallbackPython ];
+    text = ''
+      set -euo pipefail
+      if [ -f pyproject.toml ] || [ -f uv.lock ] || [ -f requirements.txt ]; then
+        exec ${pkgs.uv}/bin/uv run python "$@"
+      else
+        exec ${fallbackPython}/bin/python "$@"
+      fi
+    '';
+  };
+  uvIpython = pkgs.writeShellApplication {
+    name = "uv-ipython";
+    runtimeInputs = [ pkgs.uv fallbackPython ];
+    text = ''
+      set -euo pipefail
+      if [ -f pyproject.toml ] || [ -f uv.lock ] || [ -f requirements.txt ]; then
+        exec ${pkgs.uv}/bin/uv run ipython "$@"
+      else
+        exec ${fallbackPython}/bin/ipython "$@"
+      fi
+    '';
+  };
+in
+{
+  programs.nvf = {
+    enable = true;
+    enableManpages = true;
+
+    settings.vim = {
+      viAlias = true;
+      vimAlias = true;
+
+      debugMode = {
+        enable = true;
+        level = 16;
+        logFile = nvimLogFile;
+      };
+
+      spellcheck = {
+        enable = true;
+        programmingWordlist.enable = isMaximal;
+      };
+
+      lsp = {
+        enable = true;
+        formatOnSave = true;
+        lspkind.enable = false;
+        lightbulb.enable = true;
+        lspsaga.enable = false;
+        trouble.enable = true;
+        lspSignature.enable = !isMaximal;
+        otter-nvim.enable = isMaximal;
+        nvim-docs-view.enable = isMaximal;
+        harper-ls.enable = isMaximal;
+      };
+
+      debugger.nvim-dap = {
+        enable = true;
+        ui.enable = true;
+      };
+
+      languages = {
+        enableFormat = true;
+        enableTreesitter = true;
+        enableExtraDiagnostics = true;
+        nix.enable = true;
+        markdown.enable = true;
+        bash.enable = isMaximal;
+        clang.enable = isMaximal;
+        css.enable = isMaximal;
+        html.enable = isMaximal;
+        json.enable = isMaximal;
+        sql.enable = isMaximal;
+        java.enable = isMaximal;
+        kotlin.enable = isMaximal;
+        ts.enable = isMaximal;
+        go.enable = isMaximal;
+        lua.enable = isMaximal;
+        zig.enable = isMaximal;
+        python.enable = isMaximal;
+        typst.enable = isMaximal;
+        rust = {
+          enable = isMaximal;
+          extensions."crates-nvim".enable = isMaximal;
+        };
+        toml.enable = isMaximal;
+        assembly.enable = false;
+        astro.enable = false;
+        nu.enable = false;
+        csharp.enable = false;
+        julia.enable = false;
+        vala.enable = false;
+        scala.enable = false;
+        r.enable = false;
+        gleam.enable = false;
+        dart.enable = false;
+        ocaml.enable = false;
+        elixir.enable = false;
+        haskell.enable = false;
+        hcl.enable = false;
+        ruby.enable = false;
+        fsharp.enable = false;
+        just.enable = false;
+        qml.enable = false;
+        tailwind.enable = false;
+        svelte.enable = false;
+        nim.enable = false;
+      };
+
+      visuals = {
+        nvim-scrollbar.enable = isMaximal;
+        nvim-web-devicons.enable = true;
+        nvim-cursorline.enable = true;
+        cinnamon-nvim.enable = true;
+        fidget-nvim.enable = true;
+        highlight-undo.enable = true;
+        indent-blankline.enable = true;
+        cellular-automaton.enable = false;
+      };
+
+      statusline.lualine = lib.mkForce {
+        enable = true;
+        theme = "catppuccin";
+      };
+
+      theme = lib.mkForce {
+        enable = true;
+        name = "catppuccin";
+        style = "mocha";
+        transparent = false;
+      };
+
+      autopairs.nvim-autopairs.enable = true;
+
+      autocomplete = {
+        nvim-cmp.enable = !isMaximal;
+        blink-cmp.enable = isMaximal;
+      };
+
+      snippets.luasnip.enable = true;
+
+      filetree.neo-tree.enable = true;
+
+      tabline.nvimBufferline.enable = true;
+
+      treesitter = {
+        enable = true;
+        #context.enable = true;
+        context.enable = false;
+      };
+
+      binds = {
+        whichKey.enable = true;
+        cheatsheet.enable = true;
+      };
+
+      telescope.enable = true;
+
+      git = {
+        enable = true;
+        gitsigns.enable = true;
+        gitsigns.codeActions.enable = false;
+        neogit.enable = isMaximal;
+      };
+
+      minimap = {
+        minimap-vim.enable = false;
+        codewindow.enable = isMaximal;
+      };
+
+      dashboard = {
+        dashboard-nvim.enable = false;
+        alpha.enable = isMaximal;
+      };
+
+      notify.nvim-notify.enable = true;
+
+      projects.project-nvim.enable = isMaximal;
+
+      utility = {
+        ccc.enable = false;
+        vim-wakatime.enable = false;
+        diffview-nvim.enable = true;
+        yanky-nvim.enable = false;
+        qmk-nvim.enable = false;
+        icon-picker.enable = isMaximal;
+        surround.enable = isMaximal;
+        #leetcode-nvim.enable = isMaximal;
+        leetcode-nvim.enable = false;
+        multicursors.enable = isMaximal;
+        smart-splits.enable = isMaximal;
+        undotree.enable = isMaximal;
+        #nvim-biscuits.enable = isMaximal;
+        nvim-biscuits.enable = false;
+        motion = {
+          hop.enable = true;
+          leap.enable = true;
+          precognition.enable = isMaximal;
+        };
+        images = {
+          image-nvim.enable = false;
+          img-clip.enable = isMaximal;
+        };
+      };
+
+      notes = {
+        neorg.enable = false;
+        orgmode.enable = false;
+        mind-nvim.enable = isMaximal;
+        todo-comments.enable = true;
+      };
+
+      terminal.toggleterm = {
+        enable = true;
+        lazygit.enable = true;
+      };
+
+      ui = {
+        borders.enable = true;
+        noice.enable = true;
+        colorizer.enable = true;
+        modes-nvim.enable = false;
+        illuminate.enable = true;
+        breadcrumbs = {
+          enable = isMaximal;
+          navbuddy.enable = isMaximal;
+        };
+        smartcolumn = {
+          enable = true;
+          setupOpts.custom_colorcolumn = {
+            nix = "110";
+            ruby = "120";
+            java = "130";
+            go = ["90" "130"];
+          };
+        };
+        fastaction.enable = true;
+      };
+
+      assistant = {
+        chatgpt.enable = false;
+        copilot = {
+          enable = false;
+          cmp.enable = isMaximal;
+        };
+        codecompanion-nvim.enable = false;
+        avante-nvim.enable = isMaximal;
+      };
+
+      session.nvim-session-manager.enable = false;
+
+      gestures.gesture-nvim.enable = false;
+
+      comments.comment-nvim.enable = true;
+
+      presence.neocord.enable = false;
+
+      startPlugins = with pkgs.vimPlugins; [
+        iron-nvim
+        nvim-dap-python
+      ];
+
+      luaConfigRC.iron = ''
+        local iron = require("iron.core")
+        local view = require("iron.view")
+        local common = require("iron.fts.common")
+        vim.fn.mkdir("${nvimStateDir}", "p")
+
+        iron.setup({
+          config = {
+            scratch_repl = true,
+            close_window_on_exit = true,
+            repl_open_cmd = view.split.vertical.botright(0.35),
+            repl_definition = {
+              python = {
+                command = {"${uvIpython}/bin/uv-ipython", "--no-autoindent"},
+                format = common.bracketed_paste_python
+              },
+              sh = {
+                command = {"${pkgs.bash}/bin/bash"}
+              }
+            }
+          },
+          keymaps = {
+            send_motion = "<space>sc",
+            visual_send = "<space>sc",
+            send_file = "<space>sf",
+            send_line = "<space>sl",
+            interrupt = "<space>si",
+            exit = "<space>sq",
+            clear = "<space>cl",
+          },
+          highlight = { italic = true },
+          ignore_blank_lines = true,
+        })
+      '';
+
+      luaConfigRC.dap_python = ''
+        local dap_python = require("dap-python")
+        dap_python.setup("${uvPython}/bin/uv-python")
+        dap_python.test_runner = "pytest"
+      '';
+
+      luaConfigRC.notify_logger = ''
+        local log_path = "${notifyLogFile}"
+        local level_map = {}
+        for name, value in pairs(vim.log.levels) do
+          level_map[value] = name
+        end
+        local function append(msg, level)
+          local file = io.open(log_path, "a")
+          if file then
+            local line = string.format(
+              "%s\t%s\t%s\n",
+              os.date("%Y-%m-%d %H:%M:%S"),
+              level_map[level or vim.log.levels.INFO] or tostring(level or vim.log.levels.INFO),
+              vim.inspect(msg)
+            )
+            file:write(line)
+            file:close()
+          end
+        end
+        local original_notify = vim.notify
+        vim.notify = function(msg, level, opts)
+          append(msg, level)
+          return original_notify(msg, level, opts)
+        end
+      '';
+    };
+  };
+}
+</file>
+
 <file path="readme.md">
 # Commands: 
 
@@ -2513,8 +2516,13 @@ Error:   × invalid keybind
 </file>
 
 <file path="hosts/default/home.nix">
-{ config, pkgs, inputs, lib, ... }:
 {
+  config,
+  pkgs,
+  inputs,
+  lib,
+  ...
+}: {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
   home.username = "tobi";
@@ -2532,24 +2540,23 @@ Error:   × invalid keybind
   # The home.packages option allows you to install Nix packages into your
   # environment.
   #home.packages = [
-    # # Adds the 'hello' command to your environment. It prints a friendly
-    # # "Hello, world!" when run.
-   # pkgs.hello
+  # # Adds the 'hello' command to your environment. It prints a friendly
+  # # "Hello, world!" when run.
+  # pkgs.hello
 
+  # # It is sometimes useful to fine-tune packages, for example, by applying
+  # # overrides. You can do that directly here, just don't forget the
+  # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
+  # # fonts?
+  # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
 
-    # # It is sometimes useful to fine-tune packages, for example, by applying
-    # # overrides. You can do that directly here, just don't forget the
-    # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
-    # # fonts?
-    # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
-
-    # # You can also create simple shell scripts directly inside your
-    # # configuration. For example, this adds a command 'my-hello' to your
-    # # environment:
-    # (pkgs.writeShellScriptBin "my-hello" ''
-    #   echo "Hello, ${config.home.username}!"
-    # '')
-# ];
+  # # You can also create simple shell scripts directly inside your
+  # # configuration. For example, this adds a command 'my-hello' to your
+  # # environment:
+  # (pkgs.writeShellScriptBin "my-hello" ''
+  #   echo "Hello, ${config.home.username}!"
+  # '')
+  # ];
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
   # plain files is through 'home.file'.-fonts
@@ -2586,17 +2593,19 @@ Error:   × invalid keybind
     EDITOR = "nvim";
   };
 
+  home.shellAliases = {
+    nvkick = "env NVIM_APPNAME='nvim-kickstart' nvim";
+  };
+
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 
-
-
   programs.btop = {
-	enable=true;
-	settings = {
-	  color_theme = lib.mkForce "gruvbox_dark_v2";
-	  vim_keys = true;
-	};
+    enable = true;
+    settings = {
+      color_theme = lib.mkForce "gruvbox_dark_v2";
+      vim_keys = true;
+    };
   };
 
   programs.git = {
@@ -2623,7 +2632,6 @@ Error:   × invalid keybind
   #  localNetworkGameTransfers.openFirewall = true; # Open ports in the firewall for Steam Local Network Game Transfers
   #
 
-
   #niri
   xdg.configFile."niri/config.kdl".source = ./config.kdl;
   programs.alacritty.enable = true; # Super+T in the default setting (terminal)
@@ -2633,7 +2641,6 @@ Error:   × invalid keybind
   services.swayidle.enable = true; # idle management daemon
   services.polkit-gnome.enable = true; # polkit
 
-
   imports = [
     inputs.nvf.homeManagerModules.default
     ./waybar/default.nix
@@ -2642,26 +2649,28 @@ Error:   × invalid keybind
 
   # programs.nvf moved to ./nvf.nix
 
-
   programs.direnv.enable = true;
 
   home.packages = with pkgs; [
-   hello
-   direnv
-   nix-direnv
-   repomix
-   #<niri
-   swaybg # wallpaper
-   xwayland-satellite
-   networkmanagerapplet
-   wl-clipboard
-   slurp
-   #niri>
+    hello
+    direnv
+    nix-direnv
+    repomix
+    #<niri
+    swaybg # wallpaper
+    xwayland-satellite
+    networkmanagerapplet
+    wl-clipboard
+    slurp
+    #niri>
   ];
 
   programs.ghostty = {
     enable = true;
-    package = if pkgs.stdenv.isDarwin then pkgs.ghostty-bin else pkgs.ghostty;
+    package =
+      if pkgs.stdenv.isDarwin
+      then pkgs.ghostty-bin
+      else pkgs.ghostty;
 
     # Enable for whichever shell you plan to use!
     enableBashIntegration = true;
@@ -2677,7 +2686,6 @@ Error:   × invalid keybind
       font-family = "Lilex Nerd Font Mono";
     };
   };
-
 
   services.flameshot = {
     enable = true;
@@ -2707,12 +2715,10 @@ Error:   × invalid keybind
         # Whether to show the left side button in GUI mode
         showSidePanelButton = true;
 
-
         # Color Customization
         uiColor = "#740096";
         contrastUiColor = "#270032";
         drawColor = "#ff0000";
-
       };
     };
   };
@@ -2739,11 +2745,10 @@ Error:   × invalid keybind
   services.blueman.enable = true;
   services.libinput.mouse.horizontalScrolling = true;
 
-
   nix.settings = {
     trusted-users = [ "root" "tobi" ];
     substituters = [
-            "https://cache.nixos.org"
+      "https://cache.nixos.org"
       "https://nix-community.cachix.org"
       "https://cuda-maintainers.cachix.org"
     ];
@@ -2844,12 +2849,7 @@ Error:   × invalid keybind
     packages = with pkgs; [
       noto-fonts
       liberation_ttf
-      nerd-fonts.fira-code
-      nerd-fonts.droid-sans-mono
-      nerd-fonts.hack
-      nerd-fonts.lilex
-      nerd-fonts._0xproto
-      nerd-fonts.ubuntu
+      nerdfonts
     ];
   };
 

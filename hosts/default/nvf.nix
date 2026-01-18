@@ -157,7 +157,8 @@ in
 
       treesitter = {
         enable = true;
-        context.enable = true;
+        #context.enable = true;
+        context.enable = false;
       };
 
       binds = {
@@ -196,11 +197,13 @@ in
         qmk-nvim.enable = false;
         icon-picker.enable = isMaximal;
         surround.enable = isMaximal;
-        leetcode-nvim.enable = isMaximal;
+        #leetcode-nvim.enable = isMaximal;
+        leetcode-nvim.enable = false;
         multicursors.enable = isMaximal;
         smart-splits.enable = isMaximal;
         undotree.enable = isMaximal;
-        nvim-biscuits.enable = isMaximal;
+        #nvim-biscuits.enable = isMaximal;
+        nvim-biscuits.enable = false;
         motion = {
           hop.enable = true;
           leap.enable = true;

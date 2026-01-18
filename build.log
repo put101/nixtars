@@ -1,0 +1,40 @@
+warning: Git tree '/home/tobi/nixtars' is dirty
+Using saved setting for 'extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cuda-maintainers.cachix.org' from ~/.local/share/nix/trusted-settings.json.
+Using saved setting for 'extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E=' from ~/.local/share/nix/trusted-settings.json.
+building the system configuration...
+warning: Git tree '/home/tobi/nixtars' is dirty
+Using saved setting for 'extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cuda-maintainers.cachix.org' from ~/.local/share/nix/trusted-settings.json.
+Using saved setting for 'extra-trusted-public-keys = nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E=' from ~/.local/share/nix/trusted-settings.json.
+evaluation warning: mnw: both startAttrs."telescope" and optAttrs."telescope" are defined and not null
+                    This will cause the plugin to be installed under /opt and /start.
+evaluation warning: tobi profile: stylix: qt: `config.stylix.targets.qt.platform` other than 'qtct' are currently unsupported: kde. Support may be added in the future.
+error:
+       … while calling the 'derivationStrict' builtin
+         at <nix/derivation-internal.nix>:37:12:
+           36|
+           37|   strict = derivationStrict drvAttrs;
+             |            ^
+           38|
+
+       … while evaluating derivation 'nixos-system-nixtars-26.05.20260116.e4bae1b'
+         whose name attribute is located at /nix/store/kfcxqcxb9hcq6x33sg4cmwakbb1ifwg9-source/pkgs/stdenv/generic/make-derivation.nix:541:13
+
+       … while evaluating attribute 'buildCommand' of derivation 'nixos-system-nixtars-26.05.20260116.e4bae1b'
+         at /nix/store/kfcxqcxb9hcq6x33sg4cmwakbb1ifwg9-source/nixos/modules/system/activation/top-level.nix:69:7:
+           68|       passAsFile = [ "extraDependencies" ];
+           69|       buildCommand = systemBuilder;
+             |       ^
+           70|
+
+       … while evaluating the option `environment.etc.fonts.source':
+
+       … while evaluating definitions from `/nix/store/kfcxqcxb9hcq6x33sg4cmwakbb1ifwg9-source/nixos/modules/config/fonts/fontconfig.nix':
+
+       … while evaluating the option `fonts.packages':
+
+       … while evaluating definitions from `/nix/store/dq2f5nzdy773xg2iqncn4bjzf5r8j88d-source/hosts/default/configuration.nix':
+
+       (stack trace truncated; use '--show-trace' to show the full, detailed trace)
+
+       error: cannot coerce a list to a string: [ «thunk» «thunk» ]
+Command 'nix --extra-experimental-features 'nix-command flakes' build --print-out-paths '.#nixosConfigurations."nixtars".config.system.build.toplevel' --no-link' returned non-zero exit status 1.

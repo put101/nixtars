@@ -1,5 +1,10 @@
-{ config, pkgs, inputs, lib, ... }:
 {
+  config,
+  pkgs,
+  inputs,
+  lib,
+  ...
+}: {
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
   home.username = "tobi";
@@ -17,24 +22,23 @@
   # The home.packages option allows you to install Nix packages into your
   # environment.
   #home.packages = [
-    # # Adds the 'hello' command to your environment. It prints a friendly
-    # # "Hello, world!" when run.
-   # pkgs.hello
+  # # Adds the 'hello' command to your environment. It prints a friendly
+  # # "Hello, world!" when run.
+  # pkgs.hello
 
+  # # It is sometimes useful to fine-tune packages, for example, by applying
+  # # overrides. You can do that directly here, just don't forget the
+  # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
+  # # fonts?
+  # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
 
-    # # It is sometimes useful to fine-tune packages, for example, by applying
-    # # overrides. You can do that directly here, just don't forget the
-    # # parentheses. Maybe you want to install Nerd Fonts with a limited number of
-    # # fonts?
-    # (pkgs.nerdfonts.override { fonts = [ "FantasqueSansMono" ]; })
-
-    # # You can also create simple shell scripts directly inside your
-    # # configuration. For example, this adds a command 'my-hello' to your
-    # # environment:
-    # (pkgs.writeShellScriptBin "my-hello" ''
-    #   echo "Hello, ${config.home.username}!"
-    # '')
-# ];
+  # # You can also create simple shell scripts directly inside your
+  # # configuration. For example, this adds a command 'my-hello' to your
+  # # environment:
+  # (pkgs.writeShellScriptBin "my-hello" ''
+  #   echo "Hello, ${config.home.username}!"
+  # '')
+  # ];
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
   # plain files is through 'home.file'.-fonts
@@ -71,17 +75,19 @@
     EDITOR = "nvim";
   };
 
+  home.shellAliases = {
+    nvkick = "env NVIM_APPNAME='nvim-kickstart' nvim";
+  };
+
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 
-
-
   programs.btop = {
-	enable=true;
-	settings = {
-	  color_theme = lib.mkForce "gruvbox_dark_v2";
-	  vim_keys = true;
-	};
+    enable = true;
+    settings = {
+      color_theme = lib.mkForce "gruvbox_dark_v2";
+      vim_keys = true;
+    };
   };
 
   programs.git = {
@@ -108,16 +114,16 @@
   #  localNetworkGameTransfers.openFirewall = true; # Open ports in the firewall for Steam Local Network Game Transfers
   #
 
-
-  #niri
-  xdg.configFile."niri/config.kdl".source = ./config.kdl;
+  # niri
+  # Note: this file is deployed via Home Manager to `~/.config/niri/config.kdl`.
+  # Changes in `./config.kdl` only take effect after `nixos-rebuild switch` (or `home-manager switch`).
+  xdg.configFile."niri/config.kdl".source = lib.mkForce ./config.kdl;
   programs.alacritty.enable = true; # Super+T in the default setting (terminal)
   programs.fuzzel.enable = true; # Super+D in the default setting (app launcher)
   programs.swaylock.enable = true; # Super+Alt+L in the default setting (screen locker)
   services.mako.enable = true; # notification daemon
   services.swayidle.enable = true; # idle management daemon
   services.polkit-gnome.enable = true; # polkit
-
 
   imports = [
     inputs.nvf.homeManagerModules.default
@@ -127,26 +133,28 @@
 
   # programs.nvf moved to ./nvf.nix
 
-
   programs.direnv.enable = true;
 
   home.packages = with pkgs; [
-   hello
-   direnv
-   nix-direnv
-   repomix
-   #<niri
-   swaybg # wallpaper
-   xwayland-satellite
-   networkmanagerapplet
-   wl-clipboard
-   slurp
-   #niri>
+    hello
+    direnv
+    nix-direnv
+    repomix
+    #<niri
+    swaybg # wallpaper
+    xwayland-satellite
+    networkmanagerapplet
+    wl-clipboard
+    slurp
+    #niri>
   ];
 
   programs.ghostty = {
     enable = true;
-    package = if pkgs.stdenv.isDarwin then pkgs.ghostty-bin else pkgs.ghostty;
+    package =
+      if pkgs.stdenv.isDarwin
+      then pkgs.ghostty-bin
+      else pkgs.ghostty;
 
     # Enable for whichever shell you plan to use!
     enableBashIntegration = true;
@@ -162,7 +170,6 @@
       font-family = "Lilex Nerd Font Mono";
     };
   };
-
 
   services.flameshot = {
     enable = true;
@@ -192,12 +199,10 @@
         # Whether to show the left side button in GUI mode
         showSidePanelButton = true;
 
-
         # Color Customization
         uiColor = "#740096";
         contrastUiColor = "#270032";
         drawColor = "#ff0000";
-
       };
     };
   };
