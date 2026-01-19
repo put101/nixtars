@@ -235,6 +235,8 @@
     tmux
     opencode
     yazi
+    lazygit
+
 
     (pkgs.anki.withAddons [
       # Specify the anki-connect add-on and provide its configuration
