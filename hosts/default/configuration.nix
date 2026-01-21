@@ -1,16 +1,19 @@
 # Edit this configuration file to define what should be installed on
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
-
-{ config, pkgs, lib, inputs, ... }:
-
 {
-  imports =
-    [ # Include the results of the hardware scan.
-      ./hardware-configuration.nix
-      inputs.home-manager.nixosModules.default
-      ./stylix.nix
-    ];
+  config,
+  pkgs,
+  lib,
+  inputs,
+  ...
+}: {
+  imports = [
+    # Include the results of the hardware scan.
+    ./hardware-configuration.nix
+    inputs.home-manager.nixosModules.default
+    ./stylix.nix
+  ];
 
   hardware.bluetooth.enable = true;
 
@@ -18,19 +21,19 @@
   services.libinput.mouse.horizontalScrolling = true;
 
   nix.settings = {
-    trusted-users = [ "root" "tobi" ];
+    trusted-users = ["root" "tobi"];
     substituters = [
       "https://cache.nixos.org"
       "https://nix-community.cachix.org"
       "https://cuda-maintainers.cachix.org"
     ];
     trusted-public-keys = [
-    "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
     ];
   };
 
-  nix.settings.experimental-features = ["nix-command" "flakes" ];
+  nix.settings.experimental-features = ["nix-command" "flakes"];
 
   #services.pia-vpn = {
   #  enable = true;
@@ -38,13 +41,9 @@
   #  environmentFile = toString ../../secrets/pia.env;
   #};
 
-
-  services.ollama.enable = true;
-  #services.ollama.acceleration = "cuda"; # enable nvidia driver
-
   hardware.graphics.enable = true;
   hardware.nvidia.open = false;
-  services.xserver.videoDrivers = [ "nvidia" ];
+  services.xserver.videoDrivers = ["nvidia"];
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -60,8 +59,6 @@
   # Enable networking
   networking.networkmanager.enable = true;
   virtualisation.docker.enable = true;
-
-
 
   # Set your time zone.
   time.timeZone = "Europe/Vienna";
@@ -118,12 +115,13 @@
   };
 
   fonts = {
-    packages = with pkgs; [
-      noto-fonts
-      liberation_ttf
-    ] ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
+    packages = with pkgs;
+      [
+        noto-fonts
+        liberation_ttf
+      ]
+      ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
   };
-
 
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
@@ -132,7 +130,7 @@
   users.users.tobi = {
     isNormalUser = true;
     description = "tobi";
-    extraGroups = [ "networkmanagercachix use nvf " "wheel" "docker" ];
+    extraGroups = ["networkmanagercachix use nvf " "wheel" "docker"];
     packages = with pkgs; [
       kdePackages.kate
       #  thunderbird
@@ -141,7 +139,7 @@
 
   home-manager = {
     # also pass inputs to home-manager modules
-    extraSpecialArgs = { inherit inputs; };
+    extraSpecialArgs = {inherit inputs;};
 
     # Backup pre-existing dotfiles instead of failing activation.
     # Example: ~/.gtkrc-2.0 -> ~/.gtkrc-2.0.hm-bak
@@ -158,12 +156,10 @@
 
   programs.fish.enable = true;
 
-
-
   # uv, numpy import error: libstdc++
   programs.nix-ld.enable = true;
   programs.nix-ld.libraries = with pkgs; [
-    (lib.getLib pkgs.stdenv.cc.cc)  # provides libstdc++.so.6 and libgcc_s.so.1
+    (lib.getLib pkgs.stdenv.cc.cc) # provides libstdc++.so.6 and libgcc_s.so.1
     pkgs.zlib
     pkgs.libffi
     pkgs.openssl
@@ -175,8 +171,11 @@
 
   # Allow unfree packages
   nixpkgs.config.allowUnfree = true;
+
+  nixpkgs.overlays = [
+    inputs.self.overlays.default
+  ];
   #nixpkgs.config.cudaSupport = true;
-  
 
   # Fix uv standalone Python SSL on NixOS.
   # uv's Python looks for CA certificates at /etc/ssl/cert.pem, but NixOS typically provides
@@ -188,13 +187,13 @@
     ll = "ls -alF";
     gs = "git status";
     build = "sudo nixos-rebuild switch --flake .#nixtars";
+    nvim-nvf = "nix run github:notashelf/nvf";
   };
-
 
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-  #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     cachix
     wget
     jq
@@ -234,9 +233,13 @@
     copilot-cli
     tmux
     opencode
+
+    ralph-tui
+    beads
+    bubblewrap
+    libnotify
     yazi
     lazygit
-
 
     (pkgs.anki.withAddons [
       # Specify the anki-connect add-on and provide its configuration
@@ -259,8 +262,7 @@
     cudaPackages.nccl
 
     # screenshot plasma issue -> use https://wiki.nixos.org/wiki/Flameshot
-    grim
-
+    #grim
 
     #<datanvim
     gcc
@@ -274,10 +276,23 @@
 
     zoom-us
     yt-dlp
+
+    # llm stuff
+    ollama
     inputs.lmstudio.packages.x86_64-linux.default
     open-webui
- ];
+    (callPackage ./ralph.nix {src = inputs.ralph-src;})
+  ];
 
+  services.ollama = {
+    enable = true;
+    # acceleration = "cuda"; # REMOVED: Deprecated option
+    package = pkgs.ollama-cuda; # ADDED: New method for GPU support
+    # Optional: preload models, see https://ollama.com/library
+    loadModels = ["deepseek-r1:1.5b"];
+  };
+
+  services.open-webui.enable = true;
 
   # Some programs need SUID wrappers, can be configured further or are
   # started in user sessions.
@@ -305,5 +320,4 @@
   # Before changing this value read the documentation for this option
   # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
   system.stateVersion = "25.11"; # Did you read the comment?
-
 }

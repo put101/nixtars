@@ -42,7 +42,12 @@
 
   # Home Manager is pretty good at managing dotfiles. The primary way to manage
   # plain files is through 'home.file'.-fonts
+  # Keep Home Manager from managing `~/.gtkrc-2.0` at all.
+  # This avoids the recurring backup collision and any future assertion failures
+  # about conflicting managed targets.
   home.file = {
+    ".gtkrc-2.0".enable = false;
+
     # # Building this configuration will create a copy of 'dotfiles/screenrc' in
     # # the Nix store. Activating the configuration will then make '~/.screenrc' a
     # # symlink to the Nix store copy.
