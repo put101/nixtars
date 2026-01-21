@@ -1,0 +1,82 @@
+{
+  "name": "Nixtars System Baseline & Engineering Standard",
+  "branchName": "ralph/nixtars-baseline",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Maintain Reproducible System State",
+      "description": "As a System Administrator, I want the system to be fully reproducible from git so that I can recover or replicate the environment instantly.",
+      "acceptanceCriteria": [
+        "flake.lock is up to date",
+        "Fresh clone + nixos-rebuild build yields a successful result",
+        "No unmanaged imperative packages (e.g., nix-env -i) are required",
+        "nix fmt --check",
+        "nixos-rebuild dry-activate --flake .#nixtars --show-trace",
+        "nixos-rebuild test --flake .#nixtars",
+        "Commit messages must follow imperative style",
+        "No secrets in git status"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-002",
+      "title": "Modular Application Configuration",
+      "description": "As a Developer, I want complex applications like Neovim and Waybar to have isolated configuration files so that configuration.nix remains clean.",
+      "acceptanceCriteria": [
+        "Neovim config resides strictly in nvf.nix (or hosts/default/nvf.nix)",
+        "Waybar config resides in hosts/default/waybar/",
+        "Changes to these modules trigger Home Manager activations correctly",
+        "nix fmt --check",
+        "nixos-rebuild dry-activate --flake .#nixtars --show-trace",
+        "nixos-rebuild test --flake .#nixtars",
+        "Commit messages must follow imperative style",
+        "No secrets in git status"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-003",
+      "title": "Secure Secret Management",
+      "description": "As a User, I want to use VPNs and private services without exposing credentials in the public repo.",
+      "acceptanceCriteria": [
+        "Secrets (certs, env files) are ignored by git (.gitignore or skip-worktree)",
+        "System services reference secrets via absolute paths to the secrets/ directory",
+        "Placeholder files or documentation exist to explain required secrets",
+        "nix fmt --check",
+        "nixos-rebuild dry-activate --flake .#nixtars --show-trace",
+        "nixos-rebuild test --flake .#nixtars",
+        "Commit messages must follow imperative style",
+        "No secrets in git status"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    },
+    {
+      "id": "US-004",
+      "title": "Robust Update Mechanism",
+      "description": "As a User, I want to update system packages and inputs safely.",
+      "acceptanceCriteria": [
+        "nix flake update updates lockfile",
+        "build.sh (or rebuild alias) applies changes successfully",
+        "Bootloader entries are preserved for rollback",
+        "nix fmt --check",
+        "nixos-rebuild dry-activate --flake .#nixtars --show-trace",
+        "nixos-rebuild test --flake .#nixtars",
+        "Commit messages must follow imperative style",
+        "No secrets in git status"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": "",
+      "dependsOn": []
+    }
+  ]
+}

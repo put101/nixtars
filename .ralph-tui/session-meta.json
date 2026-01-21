@@ -1,0 +1,14 @@
+{
+  "id": "bef10062-3cf7-4c9c-9525-a502fc21e28f",
+  "status": "running",
+  "startedAt": "2026-01-21T21:39:18.697Z",
+  "updatedAt": "2026-01-21T21:39:18.697Z",
+  "agentPlugin": "opencode",
+  "trackerPlugin": "json",
+  "prdPath": "./tasks/prd.json",
+  "currentIteration": 0,
+  "maxIterations": 10,
+  "totalTasks": 0,
+  "tasksCompleted": 0,
+  "cwd": "/home/tobi/nixtars"
+}

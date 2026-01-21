@@ -26,10 +26,14 @@
       "https://cache.nixos.org"
       "https://nix-community.cachix.org"
       "https://cuda-maintainers.cachix.org"
+      "https://claude-code.cachix.org"
     ];
     trusted-public-keys = [
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
+
+      "claude-code.cachix.org-1:YeXf2aNu7UTX8Vwrze0za1WEDS+4DuI2kVeWEE4fsRk="
+
     ];
   };
 
@@ -282,6 +286,9 @@
     inputs.lmstudio.packages.x86_64-linux.default
     open-webui
     (callPackage ./ralph.nix {src = inputs.ralph-src;})
+    claude-code
+    pdfgrep
+
   ];
 
   services.ollama = {

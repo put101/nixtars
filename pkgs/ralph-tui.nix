@@ -63,6 +63,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook preConfigure
 
     cp -R ${finalAttrs.node_modules}/. .
+    cp ${./patched/opencode.ts} src/plugins/agents/builtin/opencode.ts
 
     runHook postConfigure
   '';
@@ -83,7 +84,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
     mkdir -p "$out/bin"
     makeWrapper "${lib.getExe bun}" "$out/bin/ralph-tui" \
-      --chdir "$out/lib/ralph-tui" \
       --add-flags "$out/lib/ralph-tui/dist/cli.js"
 
     runHook postInstall
