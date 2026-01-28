@@ -274,6 +274,9 @@ layout {
 // This line starts waybar, a commonly used bar for Wayland compositors.
 spawn-at-startup "waybar"
 
+// Start random wallpaper script
+spawn-at-startup "cycle-wallpapers"
+
 // Start system tray for network
 spawn-at-startup "nm-applet" "--indicator"
 

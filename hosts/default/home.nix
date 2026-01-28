@@ -221,6 +221,7 @@ in {
     # pkgs.ralph-wiggum # Removed temporarily as it's causing build issues
     #<niri
     swaybg # wallpaper
+    (pkgs.writeShellScriptBin "cycle-wallpapers" (builtins.readFile ./scripts/cycle-wallpapers.sh))
     xwayland-satellite
     networkmanagerapplet
     wl-clipboard
