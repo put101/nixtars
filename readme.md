@@ -4,6 +4,17 @@
 sudo nixos-rebuild switch --flake /home/tobi/#nixtars
 ```
 
+## Hugging Face
+
+Non-interactive Hugging Face auth (works in both KDE and Niri):
+
+- `docs/HUGGINGFACE_AUTH.md`
+
+## Customization
+
+- [Waybar Theming & Configuration](docs/WAYBAR_THEMING.md) - How to change the status bar look and feel.
+
+
 
 # Issues and TODOs
 

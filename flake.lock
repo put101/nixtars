@@ -221,11 +221,11 @@
         "nixpkgs": "nixpkgs"
       },
       "locked": {
-        "lastModified": 1767986188,
-        "narHash": "sha256-z3m/3JomuimxQUVauP9n1GO+QHa50xvAMLKKw1vWE0Q=",
+        "lastModified": 1769047368,
+        "narHash": "sha256-GoGdNME8jCc4BnlsVgdIkCKo2QWjz1RFa5qDYrMOlXY=",
         "owner": "pfassina",
         "repo": "lazyvim-nix",
-        "rev": "af3997a8b663ae0d570ae04867cd4b51873adfe2",
+        "rev": "36495fe978074b6c8a875e630d7fd7267f562401",
         "type": "github"
       },
       "original": {
@@ -327,11 +327,11 @@
     },
     "nixpkgs_2": {
       "locked": {
-        "lastModified": 1768886240,
-        "narHash": "sha256-C2TjvwYZ2VDxYWeqvvJ5XPPp6U7H66zeJlRaErJKoEM=",
+        "lastModified": 1769018530,
+        "narHash": "sha256-MJ27Cy2NtBEV5tsK+YraYr2g851f3Fl1LpNHDzDX15c=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "80e4adbcf8992d3fd27ad4964fbb84907f9478b0",
+        "rev": "88d3861acdd3d2f0e361767018218e51810df8a1",
         "type": "github"
       },
       "original": {
@@ -375,11 +375,11 @@
     },
     "nixpkgs_5": {
       "locked": {
-        "lastModified": 1768886240,
-        "narHash": "sha256-C2TjvwYZ2VDxYWeqvvJ5XPPp6U7H66zeJlRaErJKoEM=",
+        "lastModified": 1769018530,
+        "narHash": "sha256-MJ27Cy2NtBEV5tsK+YraYr2g851f3Fl1LpNHDzDX15c=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "80e4adbcf8992d3fd27ad4964fbb84907f9478b0",
+        "rev": "88d3861acdd3d2f0e361767018218e51810df8a1",
         "type": "github"
       },
       "original": {
@@ -475,14 +475,30 @@
         "type": "github"
       }
     },
+    "opencode-ralph-wiggum-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1768811770,
+        "narHash": "sha256-zocWpOjribiMZ/WyKF5gGkWJGtbHMj9uBS74uCRBHu4=",
+        "owner": "Th0rgal",
+        "repo": "opencode-ralph-wiggum",
+        "rev": "d17303973e9352d56a5bd5888c1d673c26f61429",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Th0rgal",
+        "repo": "opencode-ralph-wiggum",
+        "type": "github"
+      }
+    },
     "ralph-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1768970162,
-        "narHash": "sha256-Ahnck/c5dONp3QebqYRP5RRPGSmTdUaCK63mpDQdzrE=",
+        "lastModified": 1769095733,
+        "narHash": "sha256-rY8LWyTQ0k/91HpB9i75sounWyvpPQGA6eDmSMK24oI=",
         "owner": "mikeyobrien",
         "repo": "ralph-orchestrator",
-        "rev": "ad03629e0047eb0be11bd2073d4025a4a1d812ff",
+        "rev": "460ce82f354526bc5c34ef79d33101f3423338ca",
         "type": "github"
       },
       "original": {
@@ -494,11 +510,11 @@
     "ralph-tui-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1769001248,
-        "narHash": "sha256-xms9gVE5KsMeDs/Gic7renDBMCFSOm61sANCgOeRj/s=",
+        "lastModified": 1769095403,
+        "narHash": "sha256-s/Mlqt/Nw+KYTu7SII7bTF1lJwYVFWiie5/YRBvEvkM=",
         "owner": "subsy",
         "repo": "ralph-tui",
-        "rev": "5fb1ab58d008ac46bd6fe085833835332dcf02f8",
+        "rev": "9821bcfe2c33821504ece0309427e2b10ab658a5",
         "type": "github"
       },
       "original": {
@@ -516,6 +532,7 @@
         "nixpkgs": "nixpkgs_5",
         "nvf": "nvf",
         "openai-codex": "openai-codex",
+        "opencode-ralph-wiggum-src": "opencode-ralph-wiggum-src",
         "ralph-src": "ralph-src",
         "ralph-tui-src": "ralph-tui-src",
         "stylix": "stylix"

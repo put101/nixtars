@@ -1,14 +1,15 @@
 {
-  "id": "bef10062-3cf7-4c9c-9525-a502fc21e28f",
-  "status": "running",
-  "startedAt": "2026-01-21T21:39:18.697Z",
-  "updatedAt": "2026-01-21T21:39:18.697Z",
+  "id": "f0697a05-dc8d-4f4f-82ba-35138cddc848",
+  "status": "interrupted",
+  "startedAt": "2026-01-22T15:35:38.389Z",
+  "updatedAt": "2026-01-22T15:44:03.301Z",
   "agentPlugin": "opencode",
   "trackerPlugin": "json",
-  "prdPath": "./tasks/prd.json",
-  "currentIteration": 0,
+  "prdPath": "tasks/prd.json",
+  "currentIteration": 1,
   "maxIterations": 10,
   "totalTasks": 0,
-  "tasksCompleted": 0,
-  "cwd": "/home/tobi/nixtars"
+  "tasksCompleted": 1,
+  "cwd": "/home/tobi/nixtars/",
+  "endedAt": "2026-01-22T15:44:03.301Z"
 }

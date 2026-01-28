@@ -1,10 +1,71 @@
-{
-  config,
-  pkgs,
-  inputs,
-  lib,
-  ...
-}: {
+{ config
+, pkgs
+, inputs
+, lib
+, ...
+}: let
+  hfTokenPath =
+    if config.age.secrets ? "huggingface-token"
+    then config.age.secrets."huggingface-token".path
+    else "";
+
+  piaEnvPath =
+    if config.age.secrets ? "pia-env"
+    then config.age.secrets."pia-env".path
+    else "";
+in {
+  # Hugging Face auth without interactive prompts.
+  #
+  # Preferred source of truth (agenix): `config.age.secrets.huggingface-token.path`
+  # Fallback (legacy plaintext): `/home/tobi/nixtars/secrets/huggingface.token`
+  home.activation.huggingfaceAuth = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    agenix_token_file="${hfTokenPath}"
+    legacy_token_file="/home/tobi/nixtars/secrets/huggingface.token"
+
+    if [ -n "$agenix_token_file" ] && [ -f "$agenix_token_file" ]; then
+      token_file="$agenix_token_file"
+    else
+      token_file="$legacy_token_file"
+    fi
+
+    if [ -f "$token_file" ]; then
+      token="$(tr -d '\n\r' < "$token_file")"
+
+      # huggingface_hub (hf / huggingface-cli) reads this.
+      mkdir -p "$HOME/.cache/huggingface"
+      ( umask 077; printf '%s' "$token" > "$HOME/.cache/huggingface/token" )
+      chmod 600 "$HOME/.cache/huggingface/token" || true
+
+      # Seed git-credential-manager so git + git-lfs can auth to Hugging Face over HTTPS
+      # without prompting.
+      gcm="${pkgs.git-credential-manager}/bin/git-credential-manager"
+      if [ -x "$gcm" ]; then
+        printf "protocol=https\nhost=huggingface.co\nusername=__token__\n\n" | "$gcm" erase >/dev/null 2>&1 || true
+        printf "protocol=https\nhost=huggingface.co\nusername=__token__\npassword=%s\n\n" "$token" | "$gcm" store >/dev/null 2>&1 || true
+      fi
+
+      # Ensure git-lfs hooks/filters are installed for this user.
+      if command -v git-lfs >/dev/null 2>&1; then
+        git lfs install --skip-repo >/dev/null 2>&1 || true
+      fi
+    fi
+  '';
+
+  # agenix secrets (optional until you create `secrets/*.age`).
+  # We guard with `pathExists` so evaluation doesn't fail before the files exist.
+  age.secrets =
+    let
+      hfAge = ../../secrets/huggingface.token.age;
+      piaAge = ../../secrets/pia.env.age;
+    in
+    lib.mkMerge [
+      (lib.mkIf (builtins.pathExists hfAge) {
+        huggingface-token.file = hfAge;
+      })
+      (lib.mkIf (builtins.pathExists piaAge) {
+        pia-env.file = piaAge;
+      })
+    ];
   # Home Manager needs a bit of information about you and the paths it should
   # manage.
   home.username = "tobi";
@@ -78,11 +139,11 @@
   #
   home.sessionVariables = {
     EDITOR = "nvim";
+    # Ensure git-credential-manager uses the system keyring (Secret Service).
+    GCM_CREDENTIAL_STORE = "secretservice";
   };
 
-  home.shellAliases = {
-    nvkick = "env NVIM_APPNAME='nvim-kickstart' nvim";
-  };
+
 
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
@@ -101,6 +162,13 @@
       user = {
         name = "Tobias";
         email = "tobiaspucher@gmail.com";
+      };
+
+      # Store credentials in the system keyring (Secret Service) via git-credential-manager.
+      credential = {
+        helper = "${pkgs.git-credential-manager}/bin/git-credential-manager";
+        credentialStore = "secretservice";
+        useHttpPath = true;
       };
     };
   };
@@ -131,9 +199,11 @@
   services.polkit-gnome.enable = true; # polkit
 
   imports = [
+    inputs.agenix.homeManagerModules.age
     inputs.nvf.homeManagerModules.default
     ./waybar/default.nix
     ./nvf.nix
+    ./pia.nix
   ];
 
   # programs.nvf moved to ./nvf.nix
@@ -145,6 +215,10 @@
     direnv
     nix-direnv
     repomix
+    git-lfs
+    git-credential-manager
+    python3Packages.huggingface-hub
+    # pkgs.ralph-wiggum # Removed temporarily as it's causing build issues
     #<niri
     swaybg # wallpaper
     xwayland-satellite
@@ -152,7 +226,49 @@
     wl-clipboard
     slurp
     #niri>
+
+    (pkgs.writeShellScriptBin "pia-run" ''
+      #!/usr/bin/env bash
+      cd ~/Pia || { echo "Directory ~/Pia not found"; exit 1; }
+      
+      # Source secrets (prefer agenix, fallback to legacy plaintext)
+      pia_env_agenix="${piaEnvPath}"
+      pia_env_legacy="/home/tobi/nixtars/secrets/pia.env"
+
+      if [ -n "$pia_env_agenix" ] && [ -f "$pia_env_agenix" ]; then
+        pia_env_file="$pia_env_agenix"
+      else
+        pia_env_file="$pia_env_legacy"
+      fi
+
+      if [ -f "$pia_env_file" ]; then
+        set -a
+        source "$pia_env_file"
+        set +a
+      else
+        echo "Secrets file not found at $pia_env_file"
+        exit 1
+      fi
+
+      export DISABLE_IPV6=yes
+      export PIA_PF=false
+      export PIA_DNS=true
+      export VPN_PROTOCOL=wireguard
+
+      # Execute the command with sudo, preserving environment variables
+      sudo -E "$@"
+    '')
   ];
+
+  home.shellAliases = {
+    nvkick = "env NVIM_APPNAME='nvim-kickstart' nvim";
+
+    # PIA VPN Aliases
+    pia-ldn = "pia-run PREFERRED_REGION=uk_london ./get_region.sh";
+    pia-sth = "pia-run PREFERRED_REGION=uk_southampton ./get_region.sh";
+    pia-man = "pia-run PREFERRED_REGION=uk_manchester ./get_region.sh";
+    pia-list = "pia-run ./get_region.sh"; # Just runs the script to maybe list regions or default
+  };
 
   programs.ghostty = {
     enable = true;
@@ -169,7 +285,7 @@
     settings = {
       #theme = "Abernathy";
       #theme = "Arthur";
-      theme = "Carbonfox";
+      #theme = "Carbonfox";
       background-opacity = "0.8";
       background-blur = 20;
       font-family = "Lilex Nerd Font Mono";

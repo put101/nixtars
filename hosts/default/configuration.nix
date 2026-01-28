@@ -11,8 +11,8 @@
   imports = [
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
-    inputs.home-manager.nixosModules.default
     ./stylix.nix
+    ./agenix.nix
   ];
 
   hardware.bluetooth.enable = true;
@@ -33,7 +33,6 @@
       "cuda-maintainers.cachix.org-1:0dq3bujKpuEPMCX6U4WylrUDZ9JyUG0VpVZa7CNfq5E="
 
       "claude-code.cachix.org-1:YeXf2aNu7UTX8Vwrze0za1WEDS+4DuI2kVeWEE4fsRk="
-
     ];
   };
 
@@ -118,6 +117,12 @@
     #media-session.enable = true;
   };
 
+  # Secret Service (keyring) for non-Plasma sessions like Niri.
+  # Needed for tools like git-credential-manager (secure credential storage).
+  services.gnome.gnome-keyring.enable = true;
+  security.pam.services.sddm.enableGnomeKeyring = true;
+  security.pam.services.login.enableGnomeKeyring = true;
+
   fonts = {
     packages = with pkgs;
       [
@@ -134,7 +139,7 @@
   users.users.tobi = {
     isNormalUser = true;
     description = "tobi";
-    extraGroups = ["networkmanagercachix use nvf " "wheel" "docker"];
+    extraGroups = ["networkmanager" "wheel" "docker"];
     packages = with pkgs; [
       kdePackages.kate
       #  thunderbird
@@ -179,6 +184,7 @@
   nixpkgs.overlays = [
     inputs.self.overlays.default
   ];
+
   #nixpkgs.config.cudaSupport = true;
 
   # Fix uv standalone Python SSL on NixOS.
@@ -199,6 +205,8 @@
   environment.systemPackages = with pkgs; [
     #  vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
     cachix
+    inputs.agenix.packages.${pkgs.system}.default
+    age
     wget
     jq
     lsof
@@ -233,12 +241,14 @@
     grc
     #fish>
 
+    wireguard-tools
     gemini-cli
     copilot-cli
     tmux
     opencode
 
     ralph-tui
+    ralph-wiggum
     beads
     bubblewrap
     libnotify
@@ -283,12 +293,12 @@
 
     # llm stuff
     ollama
+    llama-cpp
     inputs.lmstudio.packages.x86_64-linux.default
     open-webui
     (callPackage ./ralph.nix {src = inputs.ralph-src;})
     claude-code
     pdfgrep
-
   ];
 
   services.ollama = {

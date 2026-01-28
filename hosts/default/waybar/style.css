@@ -1,101 +1,173 @@
-@define-color base00 #1e1e2e;
-@define-color base01 #181825;
-@define-color base02 #313244;
-@define-color base03 #45475a;
-@define-color base04 #585b70;
-@define-color base05 #cdd6f4;
-@define-color base06 #f5e0dc;
-@define-color base07 #b4befe;
-@define-color base08 #f38ba8;
-@define-color base09 #fab387;
-@define-color base0A #f9e2af;
-@define-color base0B #a6e3a1;
-@define-color base0C #94e2d5;
-@define-color base0D #89b4fa;
-@define-color base0E #cba6f7;
-@define-color base0F #f2cdcd;
+/* 
+ * Gruvbox Dark Palette 
+ */
+
+@define-color bg      #282828;
+@define-color bg1     #3c3836;
+@define-color fg      #ebdbb2;
+
+@define-color red     #cc241d;
+@define-color green   #98971a;
+@define-color yellow  #d79921;
+@define-color blue    #458588;
+@define-color purple  #b16286;
+@define-color aqua    #689d6a;
+@define-color orange  #d65d0e;
+@define-color gray    #a89984;
 
 * {
-    border: none;
-    border-radius: 0;
-    font-family: "JetBrainsMono Nerd Font Mono", Roboto, Helvetica, Arial, sans-serif;
+    font-family: "JetBrainsMono Nerd Font", Roboto, Helvetica, Arial, sans-serif;
     font-size: 13px;
-    min-height: 0;
+    font-weight: bold;
 }
 
 window#waybar {
-    background: transparent;
-    color: @base05;
+    background-color: transparent;
+    color: @fg;
 }
 
-/* Tooltip */
-tooltip {
-    background: @base00;
-    border: 1px solid @base0D;
-    border-radius: 10px;
+window#waybar.hidden {
+    opacity: 0.2;
 }
 
-tooltip label {
-    color: @base05;
+/* 
+ * Modules 
+ */
+
+.modules-left > widget:first-child > #workspaces {
+    margin-left: 0;
 }
 
-/* Modules (Pills) */
+.modules-right > widget:last-child > #workspaces {
+    margin-right: 0;
+}
+
+/* Individual Module Container Styling */
 #workspaces,
+#window,
 #clock,
-#tray,
 #battery,
+#cpu,
+#memory,
+#disk,
+#temperature,
+#backlight,
 #network,
 #pulseaudio,
-#custom-power,
-#custom-niri-window {
-    background: @base00;
-    color: @base05;
-    padding: 6px 14px;
-    margin: 4px 3px;
-    border-radius: 15px;
-    border: 1px solid @base02;
-    box-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+#custom-media,
+#tray,
+#mode,
+#idle_inhibitor,
+#scratchpad,
+#mpd {
+    padding: 0 10px;
+    background-color: @bg1; /* Darker box background */
+    color: @fg;
+    border-radius: 4px; /* Gruvbox often uses slightly squarer corners */
+    margin-top: 5px;
+    margin-bottom: 5px;
+    margin-left: 4px;
+    margin-right: 4px;
+    border: 2px solid @bg1; /* Slight border */
 }
 
-/* Workspaces */
+/* Specific Module Colors (Gruvbox Theme) */
+
+#workspaces {
+    background-color: @bg;
+    border: none;
+}
+
 #workspaces button {
     padding: 0 5px;
-    background: transparent;
-    color: @base05;
-    border-radius: 10px;
-    margin: 0 2px;
+    background-color: transparent;
+    color: @gray;
+    border-radius: 4px;
 }
 
 #workspaces button:hover {
-    background: @base02;
+    background-color: @bg1;
 }
 
 #workspaces button.active {
-    background: @base0D;
-    color: @base00;
+    background-color: @bg1;
+    color: @orange; /* Orange for active workspace */
 }
 
 #workspaces button.focused {
-    background: @base0D;
-    color: @base00;
+    background-color: @bg1;
+    color: @orange;
 }
 
-/* Individual Module Tweaks */
+#window {
+    background-color: @bg;
+    color: @fg;
+    border: none;
+}
+
+/* Hide window module if empty */
+window#waybar.empty #window {
+    background-color: transparent;
+    color: transparent;
+    border: none;
+}
+
 #clock {
-    font-weight: bold;
-    color: @base0D;
+    background-color: @bg1;
+    color: @fg;
+    border-bottom: 2px solid @blue;
 }
 
-#battery.charging {
-    color: @base0B;
+#pulseaudio {
+    background-color: @bg1;
+    color: @fg;
+    border-bottom: 2px solid @purple;
 }
 
-#battery.warning:not(.charging) {
-    color: @base09;
+#pulseaudio.muted {
+    background-color: @bg1;
+    color: @gray;
+    border-bottom: 2px solid @gray;
+}
+
+#network {
+    background-color: @bg1;
+    color: @fg;
+    border-bottom: 2px solid @aqua;
+}
+
+#network.disconnected {
+    background-color: @bg1;
+    color: @red;
+    border-bottom: 2px solid @red;
+}
+
+#cpu {
+    background-color: @bg1;
+    color: @fg;
+    border-bottom: 2px solid @red;
+}
+
+#memory {
+    background-color: @bg1;
+    color: @fg;
+    border-bottom: 2px solid @yellow;
+}
+
+#battery {
+    background-color: @bg1;
+    color: @fg;
+    border-bottom: 2px solid @green;
+}
+
+#battery.charging, #battery.plugged {
+    border-bottom: 2px solid @aqua;
 }
 
 #battery.critical:not(.charging) {
-    color: @base08;
+    background-color: @red;
+    color: @bg;
+    border: 2px solid @red;
     animation-name: blink;
     animation-duration: 0.5s;
     animation-timing-function: linear;
@@ -105,20 +177,11 @@ tooltip label {
 
 @keyframes blink {
     to {
-        background-color: @base08;
-        color: @base00;
+        background-color: @bg;
+        color: @red;
     }
 }
 
-#network.disconnected {
-    color: @base08;
-}
-
-#pulseaudio.muted {
-    color: @base04;
-}
-
-#custom-power {
-    color: @base08;
-    padding-right: 18px;
+#tray {
+    background-color: @bg1;
 }

@@ -62,15 +62,28 @@
 
     lmstudio.url = "github:tomsch/lmstudio-nix";
 
+    opencode-ralph-wiggum-src = {
+      url = "github:Th0rgal/opencode-ralph-wiggum";
+      flake = false;
+    };
+
   };
 
-  outputs = { self, nixpkgs, home-manager, lazyvim, niri-session-manager,
-        lmstudio, ... }@inputs: {
-    overlays.default = final: prev: {
-      ralph-tui = final.callPackage ./pkgs/ralph-tui.nix {
-        src = inputs.ralph-tui-src;
+    outputs = { self, nixpkgs, home-manager, lazyvim, niri-session-manager,
+          lmstudio, ... }@inputs: {
+      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
+      
+      overlays.default = final: prev: {
+        ralph-tui = final.callPackage ./pkgs/ralph-tui.nix {
+          src = inputs.ralph-tui-src;
+        };
+
+        ralph-wiggum = final.callPackage ./pkgs/ralph-wiggum.nix {
+          src = inputs.opencode-ralph-wiggum-src;
+          opencode = final.opencode;
+        };
       };
-    };
+
     # use "nixos", or your hostname as the name of the configuration
     # it's a better practice than "default" shown in the video
     nixosConfigurations.nixtars = nixpkgs.lib.nixosSystem {
