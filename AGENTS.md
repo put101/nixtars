@@ -24,6 +24,13 @@ Files under `secrets/` (VPN env and certificates) are referenced by commented se
 ## NVF Troubleshooting Notes
 The NVF profile mirrors the upstream maximal template (`hosts/default/nvf.nix`) and writes persistent Neovim logs to `~/.local/state/nvf/nvim.log` plus per-plugin logs (e.g., `luasnip.log`, `nio.log`). A custom `vim.notify` shim sends every warning/error into `~/.local/state/nvf/notify.log`, which appears after the first notification is emitted. To capture issues, reproduce them, then run `tail -F ~/.local/state/nvf/{nvim,notify}.log` and attach the resulting files. If `nvim-treesitter` errors mention missing `ts_utils`, ensure `vim.treesitter.enable = true` stayed in the config; disabling it removes the plugin and breaks dependent modules.
 
+## UI/Theme Improvements
+- **Theme Switch to Gruvbox Dark**: Changed Stylix base16Scheme to Gruvbox Dark Medium. This applies Gruvbox colors to niri (focus rings, borders), terminals, GTK apps, and wallpaper/fonts consistently.
+- **Waybar Theming**: Updated `waybar/style.css` color variables to Gruvbox palette, ensuring a cohesive look with the rest of the system.
+- **Brightness Control Fix**: Installed `brightnessctl` and added backlight module to waybar. Fixes Fn key controls (XF86MonBrightnessUp/Down) and adds on-screen brightness widget. Previously failed due to missing brightnessctl.
+
+Run `nixos-rebuild switch --flake .#nixtars` to apply. Test brightness via Fn keys or waybar. If issues, check `brightnessctl --help` or niri logs.
+
 ## Landing the Plane (Session Completion)
 
 **When ending a work session**, you MUST complete ALL steps below. Work is NOT complete until `git push` succeeds.
