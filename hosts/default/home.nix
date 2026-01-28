@@ -191,6 +191,18 @@ in {
   # Note: this file is deployed via Home Manager to `~/.config/niri/config.kdl`.
   # Changes in `./config.kdl` only take effect after `nixos-rebuild switch` (or `home-manager switch`).
   xdg.configFile."niri/config.kdl".source = lib.mkForce ./config.kdl;
+
+  # Link Gruvbox wallpapers from the flake
+  home.file."Pictures/Wallpapers/Gruvbox" = {
+    source = inputs.gruvbox-wallpapers.packages.${pkgs.system}.default;
+    recursive = true;
+  };
+
+  xdg.configFile."wpaperd/wallpaper.toml".text = ''
+    [default]
+    path = "/home/tobi/Pictures/Wallpapers/Gruvbox/wallpapers"
+    duration = "30m"
+  '';
   programs.alacritty.enable = true; # Super+T in the default setting (terminal)
   programs.fuzzel.enable = true; # Super+D in the default setting (app launcher)
   programs.swaylock.enable = true; # Super+Alt+L in the default setting (screen locker)
@@ -220,8 +232,7 @@ in {
     python3Packages.huggingface-hub
     # pkgs.ralph-wiggum # Removed temporarily as it's causing build issues
     #<niri
-    swaybg # wallpaper
-    (pkgs.writeShellScriptBin "cycle-wallpapers" (builtins.readFile ./scripts/cycle-wallpapers.sh))
+    wpaperd
     xwayland-satellite
     networkmanagerapplet
     wl-clipboard

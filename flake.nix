@@ -54,6 +54,8 @@
     #niri
     niri-session-manager.url = "github:MTeaHead/niri-session-manager";
 
+    gruvbox-wallpapers.url = "github:AngelJumbo/gruvbox-wallpapers";
+
 
     #inputs.zotero-nix.url = "github:camillemndn/zotero-nix";
 

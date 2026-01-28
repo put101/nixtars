@@ -17,7 +17,7 @@
 1.  **Global Theming (Stylix):**
     *   **Created:** `nixtars/hosts/default/stylix.nix`
         *   **Scheme:** Catppuccin Mocha (Dark).
-        *   **Wallpaper:** `nixtars/wallpaper.png` (Forest Landscape).
+        *   **Wallpaper:** Managed by `wpaperd`. Wallpapers are sourced from the `gruvbox-wallpapers` flake and linked to `~/Pictures/Wallpapers/Gruvbox`. `wpaperd` cycles them every 30 minutes. `nixtars/wallpapers/forest.png` is used by Stylix for the login screen.
         *   **Fonts:** JetBrains Mono (Mono) & DejaVu Sans (UI).
     *   **Modified:** `nixtars/hosts/default/configuration.nix`
         *   Imported `./stylix.nix`.

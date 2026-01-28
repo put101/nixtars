@@ -1,7 +1,8 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-`flake.nix` is the single entry point; it pins `nixos-unstable`, wires in `home-manager`, `nvf`, `stylix`, and exports the `nixtars` configuration. Host-specific logic lives under `hosts/default/` with `configuration.nix` for system services, `home.nix` for the user profile, `nvf.nix` for Neovim, and `waybar/` plus `config.kdl` for UI tweaks. Keep shared assets (e.g., `wallpaper.png`, VPN material in `secrets/`) in place because their paths are referenced directly inside those modules.
+`flake.nix` is the single entry point; it pins `nixos-unstable`, wires in `home-manager`, `nvf`, `stylix`, and exports the `nixtars` configuration. Host-specific logic lives under `hosts/default/` with `configuration.nix` for system services, `home.nix` for the user profile, `nvf.nix` for Neovim, and `waybar/` plus `config.kdl` for UI tweaks.
+Shared assets (VPN material in `secrets/`) are kept in place. Wallpapers are now managed via the `gruvbox-wallpapers` flake input and `wpaperd`. The `wpaperd` service cycles through wallpapers found in `~/Pictures/Wallpapers/Gruvbox`, which are symlinked from the flake input. `stylix` uses `wallpapers/forest.png` as a fallback/login screen background.
 
 ## Build, Test, and Development Commands
 - `./build.sh` or `nixos-rebuild switch --flake .#nixtars` applies the full system profile. Run it after any Nix module edit.

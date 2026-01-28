@@ -40,7 +40,7 @@ The system is composed of the following layers:
     *   **Hardware:** `hardware-configuration.nix` (Filesystems, Kernel modules).
 *   **User Layer:** `home.nix` (Home Manager: Shells, Git, UI themes).
     *   **Applications:** `nvf.nix` (Neovim), `waybar/` (Status bar), `config.kdl` (Niri WM).
-*   **Assets & Secrets:** `secrets/` (VPN, Certs), `wallpaper.png`.
+*   **Assets & Secrets:** `secrets/` (VPN, Certs). Wallpapers managed via `gruvbox-wallpapers` flake and `wpaperd`.
 *   **Custom Packages:** `pkgs/` (Patched binaries, scripts).
 
 ### 3.2 Key Components
