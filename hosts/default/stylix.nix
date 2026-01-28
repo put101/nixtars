@@ -3,7 +3,7 @@
 
   stylix = {
     enable = true;
-    base16Scheme = "${pkgs.base16-schemes}/share/themes/rose-pine.yaml";
+    base16Scheme = "${pkgs.base16-schemes}/share/themes/gruvbox-dark-medium.yaml";
     image = ../../wallpaper.png;
     polarity = "dark";
 

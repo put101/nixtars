@@ -1,2 +1,5 @@
 hardware-configuration.nix
-secrets/
+# Track encrypted secrets and their mapping, ignore plaintext.
+secrets/*
+!secrets/secrets.nix
+!secrets/*.age

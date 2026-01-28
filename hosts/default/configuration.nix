@@ -212,6 +212,7 @@
     lsof
     tree
     gh
+    brightnessctl
     docker
     docker-color-output
     oxker
