@@ -270,6 +270,11 @@ in
       startPlugins = with pkgs.vimPlugins; [
         iron-nvim
         nvim-dap-python
+        nvim-treesitter
+        (pkgs.vimUtils.buildVimPlugin {
+          name = "ts-utils-patch";
+          src = ../../pkgs/patched/ts-utils-patch;
+        })
       ];
 
       luaConfigRC.iron = ''

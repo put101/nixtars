@@ -14,6 +14,7 @@
         "clock"
     ],
     "modules-right": [
+        "custom/wallpaper",
         "pulseaudio",
         "cpu",
         "memory",
@@ -21,6 +22,12 @@
         "battery",
         "tray"
     ],
+    "custom/wallpaper": {
+        "format": " ",
+        "on-click": "wpaperctl next",
+        "on-click-right": "wpaperctl previous",
+        "tooltip": "Left: Next Wallpaper\nRight: Previous Wallpaper"
+    },
     "niri/workspaces": {
         "format": "{icon}",
         "format-icons": {

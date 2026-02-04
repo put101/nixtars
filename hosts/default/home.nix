@@ -1,8 +1,9 @@
-{ config
-, pkgs
-, inputs
-, lib
-, ...
+{
+  config,
+  pkgs,
+  inputs,
+  lib,
+  ...
 }: let
   hfTokenPath =
     if config.age.secrets ? "huggingface-token"
@@ -18,17 +19,10 @@ in {
   #
   # Preferred source of truth (agenix): `config.age.secrets.huggingface-token.path`
   # Fallback (legacy plaintext): `/home/tobi/nixtars/secrets/huggingface.token`
-  home.activation.huggingfaceAuth = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    agenix_token_file="${hfTokenPath}"
-    legacy_token_file="/home/tobi/nixtars/secrets/huggingface.token"
+  home.activation.huggingfaceAuth = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    token_file="${hfTokenPath}"
 
-    if [ -n "$agenix_token_file" ] && [ -f "$agenix_token_file" ]; then
-      token_file="$agenix_token_file"
-    else
-      token_file="$legacy_token_file"
-    fi
-
-    if [ -f "$token_file" ]; then
+    if [ -n "$token_file" ] && [ -f "$token_file" ]; then
       token="$(tr -d '\n\r' < "$token_file")"
 
       # huggingface_hub (hf / huggingface-cli) reads this.
@@ -53,11 +47,10 @@ in {
 
   # agenix secrets (optional until you create `secrets/*.age`).
   # We guard with `pathExists` so evaluation doesn't fail before the files exist.
-  age.secrets =
-    let
-      hfAge = ../../secrets/huggingface.token.age;
-      piaAge = ../../secrets/pia.env.age;
-    in
+  age.secrets = let
+    hfAge = ../../secrets/huggingface.token.age;
+    piaAge = ../../secrets/pia.env.age;
+  in
     lib.mkMerge [
       (lib.mkIf (builtins.pathExists hfAge) {
         huggingface-token.file = hfAge;
@@ -143,8 +136,6 @@ in {
     GCM_CREDENTIAL_STORE = "secretservice";
   };
 
-
-
   # Let Home Manager install and manage itself.
   programs.home-manager.enable = true;
 
@@ -200,8 +191,8 @@ in {
 
   xdg.configFile."wpaperd/wallpaper.toml".text = ''
     [default]
-    path = "/home/tobi/Pictures/Wallpapers/Gruvbox/wallpapers"
-    duration = "30m"
+    path = "/home/tobi/Pictures/Wallpapers/Gruvbox"
+    duration = "5m"
   '';
   programs.alacritty.enable = true; # Super+T in the default setting (terminal)
   programs.fuzzel.enable = true; # Super+D in the default setting (app launcher)
@@ -220,6 +211,19 @@ in {
 
   # programs.nvf moved to ./nvf.nix
 
+  # nemo, udisks, auto-usb detection
+  xdg.desktopEntries.nemo = {
+    name = "Nemo";
+    exec = "${pkgs.nemo-with-extensions}/bin/nemo";
+  };
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "inode/directory" = ["nemo.desktop"];
+      "application/x-gnome-saved-search" = ["nemo.desktop"];
+    };
+  };
+
   programs.direnv.enable = true;
 
   home.packages = with pkgs; [
@@ -237,30 +241,26 @@ in {
     networkmanagerapplet
     wl-clipboard
     slurp
+    wireguard-tools
+    jq
+    openresolv
     #niri>
 
     (pkgs.writeShellScriptBin "pia-run" ''
       #!/usr/bin/env bash
-      cd ~/Pia || { echo "Directory ~/Pia not found"; exit 1; }
-      
-      # Source secrets (prefer agenix, fallback to legacy plaintext)
-      pia_env_agenix="${piaEnvPath}"
-      pia_env_legacy="/home/tobi/nixtars/secrets/pia.env"
+      cd ~/Pia || { echo "Directory ~/Pia not found. Run 'nixos-rebuild switch' to fetch it."; exit 1; }
 
-      if [ -n "$pia_env_agenix" ] && [ -f "$pia_env_agenix" ]; then
-        pia_env_file="$pia_env_agenix"
-      else
-        pia_env_file="$pia_env_legacy"
-      fi
+      # Source secrets from agenix
+      pia_env_file="${piaEnvPath}"
 
-      if [ -f "$pia_env_file" ]; then
-        set -a
-        source "$pia_env_file"
-        set +a
-      else
-        echo "Secrets file not found at $pia_env_file"
+      if [ -z "$pia_env_file" ] || [ ! -f "$pia_env_file" ]; then
+        echo "Error: PIA secrets file not found at '$pia_env_file'. Ensure you have 'pia-env' in secrets.nix and rekeyed."
         exit 1
       fi
+
+      set -a
+      source "$pia_env_file"
+      set +a
 
       export DISABLE_IPV6=yes
       export PIA_PF=false
@@ -301,6 +301,18 @@ in {
       background-opacity = "0.8";
       background-blur = 20;
       font-family = "Lilex Nerd Font Mono";
+    };
+  };
+
+  services.udiskie = {
+    enable = true;
+    settings = {
+      # workaround for
+      # https://github.com/nix-community/home-manager/issues/632
+      program_options = {
+        # replace with your favorite file manager
+        file_manager = "${pkgs.nemo-with-extensions}/bin/nemo";
+      };
     };
   };
 

@@ -16,6 +16,7 @@
   ];
 
   hardware.bluetooth.enable = true;
+  hardware.enableAllFirmware = true;
 
   services.blueman.enable = true;
   services.libinput.mouse.horizontalScrolling = true;
@@ -122,6 +123,8 @@
   services.gnome.gnome-keyring.enable = true;
   security.pam.services.sddm.enableGnomeKeyring = true;
   security.pam.services.login.enableGnomeKeyring = true;
+
+  services.udisks2.enable = true;
 
   fonts = {
     packages = with pkgs;
@@ -256,6 +259,8 @@
     yazi
     lazygit
 
+    gparted
+
     (pkgs.anki.withAddons [
       # Specify the anki-connect add-on and provide its configuration
       (pkgs.ankiAddons.anki-connect.withConfig {
@@ -292,6 +297,8 @@
     zoom-us
     yt-dlp
 
+    (pkgs.ffmpeg-full.override {withUnfree = true;})
+
     # llm stuff
     ollama
     llama-cpp
@@ -300,6 +307,11 @@
     (callPackage ./ralph.nix {src = inputs.ralph-src;})
     claude-code
     pdfgrep
+
+    baobab
+    kdePackages.filelight
+    ncdu
+    parallel-disk-usage
   ];
 
   services.ollama = {
