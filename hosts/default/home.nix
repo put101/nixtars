@@ -196,18 +196,50 @@ in {
   '';
   programs.alacritty.enable = true; # Super+T in the default setting (terminal)
   programs.fuzzel.enable = true; # Super+D in the default setting (app launcher)
-  programs.swaylock.enable = true; # Super+Alt+L in the default setting (screen locker)
+  programs.swaylock = {
+    enable = true; # Super+Alt+L in the default setting (screen locker)
+    settings = {
+      image = lib.mkForce "${config.home.homeDirectory}/nixtars/wallpapers/forest.png";
+      scaling = lib.mkForce "fit";
+      color = lib.mkForce "1d2021";
+      indicator-radius = lib.mkForce 100;
+      indicator-thickness = lib.mkForce 10;
+    };
+  };
   services.mako.enable = true; # notification daemon
   services.swayidle.enable = true; # idle management daemon
   services.polkit-gnome.enable = true; # polkit
 
   imports = [
     inputs.agenix.homeManagerModules.age
-    inputs.nvf.homeManagerModules.default
     ./waybar/default.nix
-    ./nvf.nix
     ./pia.nix
+    ./custom-neovim.nix
   ];
+
+  xdg.configFile."nvim/after/plugin/spellfix.lua" = {
+    text = ''
+      local spell_dir = vim.fn.stdpath("data") .. "/spell"
+      vim.fn.mkdir(spell_dir, "p")
+      vim.opt.spellfile = spell_dir .. "/en.utf-8.add"
+      if vim.fn.executable("curl") == 1 then
+        local programming_spell = spell_dir .. "/programming.utf-8.spl"
+        if vim.fn.filereadable(programming_spell) == 0 then
+          vim.notify("Downloading programming spell file...", vim.log.levels.INFO)
+          vim.fn.system({
+            "curl", "-fsSL",
+            "-o", programming_spell,
+            "https://raw.githubusercontent.com/psliwka/vim-dirtytalk/master/spell/programming.utf-8.spl"
+          })
+          if vim.v.shell_error == 0 then
+            vim.opt.spelllang:append("programming")
+          end
+        else
+          vim.opt.spelllang:append("programming")
+        end
+      end
+    '';
+  };
 
   # programs.nvf moved to ./nvf.nix
 
@@ -273,13 +305,23 @@ in {
   ];
 
   home.shellAliases = {
-    nvkick = "env NVIM_APPNAME='nvim-kickstart' nvim";
+    nv = "nvim";
+    
+    # Neovim distributions (each uses isolated config/data)
+    nvim-astro = "nvim";  # SumAstroNvim (default, managed by home-manager)
+    nvim-kick = "nvim-kick";  # kickstart-nix.nvim (nix-managed plugins)
+    nvim-custom = "env NVIM_APPNAME='nvim-custom' nvim";  # custom neovim in ~/my-neovim
 
     # PIA VPN Aliases
     pia-ldn = "pia-run PREFERRED_REGION=uk_london ./get_region.sh";
     pia-sth = "pia-run PREFERRED_REGION=uk_southampton ./get_region.sh";
     pia-man = "pia-run PREFERRED_REGION=uk_manchester ./get_region.sh";
     pia-list = "pia-run ./get_region.sh"; # Just runs the script to maybe list regions or default
+
+    # Easy shell switching
+    to-bash = "exec bash";
+    to-fish = "exec fish";
+    to-zsh = "exec zsh";
   };
 
   programs.ghostty = {
@@ -300,7 +342,15 @@ in {
       #theme = "Carbonfox";
       background-opacity = "0.8";
       background-blur = 20;
-      font-family = "Lilex Nerd Font Mono";
+      font-family = "RobotoMono Nerd Font Mono";
+
+      # Cursor animation - smooth cursor movement
+      cursor-style = "bar";
+      cursor-style-blink = true;
+      cursor-blink-interval = 500;
+      
+      # Cursor trail effect shader
+      custom-shader = "/home/tobi/.config/ghostty/shaders/cursor_tail.glsl";
     };
   };
 

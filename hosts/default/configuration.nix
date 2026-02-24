@@ -9,10 +9,10 @@
   ...
 }: {
   imports = [
-    # Include the results of the hardware scan.
     ./hardware-configuration.nix
     ./stylix.nix
     ./agenix.nix
+    ./gdrive-backup.nix
   ];
 
   hardware.bluetooth.enable = true;
@@ -52,6 +52,14 @@
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+
+  # SumAstroNvim configuration
+  sumAstroNvim = {
+    username = "tobi";
+    nerdfont = pkgs.nerd-fonts.jetbrains-mono;
+    nodePackage = pkgs.nodejs;
+    pythonPackage = pkgs.python3;
+  };
 
   networking.hostName = "nixtars"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -138,10 +146,17 @@
   # Enable touchpad support (enabled default in most desktopManager).
   # services.xserver.libinput.enable = true;
 
+services.deluge = {
+	enable = true;
+	web.enable = true;  # Enables the web interface
+	openFirewall = true; # Opens the firewall for Deluge
+	};
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.tobi = {
     isNormalUser = true;
     description = "tobi";
+    shell = pkgs.fish;
     extraGroups = ["networkmanager" "wheel" "docker"];
     packages = with pkgs; [
       kdePackages.kate
@@ -199,8 +214,8 @@
   environment.shellAliases = {
     ll = "ls -alF";
     gs = "git status";
+    nv = "nvim";
     build = "sudo nixos-rebuild switch --flake .#nixtars";
-    nvim-nvf = "nix run github:notashelf/nvf";
   };
 
   # List packages installed in system profile. To search, run:
@@ -215,6 +230,7 @@
     lsof
     tree
     gh
+    just
     brightnessctl
     docker
     docker-color-output
@@ -226,10 +242,13 @@
     tealdeer
     xclip
     bat
+    unetbootin
+    balena-etcher
     fastfetch
     python3
     uv
     microsoft-edge
+    brave
     signal-desktop
     #jetbrains.pycharm-professional
     obsidian
@@ -312,6 +331,17 @@
     kdePackages.filelight
     ncdu
     parallel-disk-usage
+    pciutils
+    usbutils
+
+    # Neovim runtime deps (for mason in AstroNvim)
+    unzip
+    go
+
+    # kickstart-nix.nvim - wrapped as nvim-kick command
+    (pkgs.writeShellScriptBin "nvim-kick" ''
+      exec ${inputs.kickstart-nvim.packages.${pkgs.system}.default}/bin/nvim "$@"
+    '')
   ];
 
   services.ollama = {

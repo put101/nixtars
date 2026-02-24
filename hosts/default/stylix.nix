@@ -7,6 +7,8 @@
     image = ../../wallpapers/forest.png;
     polarity = "dark";
 
+
+
     cursor = {
       package = pkgs.bibata-cursors;
       name = "Bibata-Modern-Classic";
@@ -15,8 +17,8 @@
 
     fonts = {
       monospace = {
-        package = pkgs.nerd-fonts.jetbrains-mono;
-        name = "JetBrainsMono Nerd Font Mono";
+        package = pkgs.nerd-fonts.roboto-mono;
+        name = "RobotoMono Nerd Font Mono";
       };
       sansSerif = {
         package = pkgs.dejavu_fonts;

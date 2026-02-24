@@ -343,6 +343,12 @@ in
           return original_notify(msg, level, opts)
         end
       '';
+
+      luaConfigRC.spellfile_fix = ''
+        local spell_dir = vim.fn.expand("${nvimStateDir}/spell")
+        vim.fn.mkdir(spell_dir, "p")
+        vim.opt.spellfile = spell_dir .. "/en.utf-8.add," .. spell_dir .. "/programming.utf-8.add"
+      '';
     };
   };
 }

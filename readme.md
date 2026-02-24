@@ -14,8 +14,13 @@ Non-interactive Hugging Face auth (works in both KDE and Niri):
 
 - [Waybar Theming & Configuration](docs/WAYBAR_THEMING.md) - How to change the status bar look and feel.
 
+### Wallpaper
 
-
+Ongoing issue when updating downloads full 1GB repo each time.
+```sh
+[tobi@nixtars:~/nixtars]$ nix flake update
+[225.6/0.0 MiB DL] downloading 'https://github.com/AngelJumbo/gruvbox-wallpapers/archive/46c4
+```
 # Issues and TODOs
 
 - 
@@ -134,3 +139,38 @@ buffer = lines.pop() ?? '';
 
 ### Verification
 Rebuilt the system with the patch. `ralph-tui doctor` continues to pass, and the buffering logic ensures reliable communication with the `opencode` agent.
+
+## Architectural Patterns (BP2)
+
+As of February 2026, the project follows these architectural patterns:
+
+- **State Separation:** System configuration (Nix) is separated from volatile application state.
+- **Archive & Rehydrate:** Long-term data is archived and rehydrated into the environment to maintain reproducibility.
+- **Documentation First:** All significant architectural changes are documented in `docs/` and reflected here.
+
+## [Fixed] sum-astro-nvim Build Failure (2026-02-20)
+
+### Symptom
+Build failing with 404 errors when fetching `sum-astro-nvim` and missing attribute `nixpkgs-unstable`.
+
+### Investigation
+1. `SumAstroNvim` repository changed its default branch structure or the URL in `flake.nix` was pointing to a non-existent `main` branch (fixed by using `master`).
+2. The `sumAstroNvim` Nix module expects `nixpkgs-unstable` to be passed as a top-level argument via `specialArgs`.
+3. `sumAstroNvim.nerdfont` option requires a package type, but was being passed a string `"JetBrainsMono"`.
+
+### Fix
+1. **Flake URL:** Kept `sum-astro-nvim.url` as `github:sum-rock/SumAstroNvim/master`.
+2. **Special Args:** Updated `flake.nix` to explicitly inherit `nixpkgs-unstable` into `specialArgs`.
+   ```nix
+   specialArgs = {
+     inherit inputs;
+     inherit (inputs) nixpkgs-unstable;
+   };
+   ```
+3. **Font Config:** Updated `hosts/default/configuration.nix` to use `pkgs.nerd-fonts.jetbrains-mono`.
+   ```nix
+   nerdfont = pkgs.nerd-fonts.jetbrains-mono;
+   ```
+
+### Verification
+`sudo nixos-rebuild switch --flake .#nixtars` completed successfully.
