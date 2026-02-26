@@ -342,6 +342,8 @@ services.deluge = {
     (pkgs.writeShellScriptBin "nvim-kick" ''
       exec ${inputs.kickstart-nvim.packages.${pkgs.system}.default}/bin/nvim "$@"
     '')
+
+    localsend
   ];
 
   services.ollama = {

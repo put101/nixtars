@@ -18,7 +18,7 @@
       RCLONE_REMOTE="gdrive"
       GDRIVE_PATH="jku/backups/$REPONAME"
       LOCAL_BACKUP_DIR="/home/tobi/.cache/gdrive-backups"
-      KEEP_COUNT=30
+      KEEP_COUNT=5
       
       mkdir -p "$LOCAL_BACKUP_DIR"
       
@@ -26,16 +26,20 @@
       SNAPSHOT_NAME="backup_$TIMESTAMP"
       
       echo "Creating snapshot: $SNAPSHOT_NAME"
-      rsync -a --delete "$SOURCE/" "$LOCAL_BACKUP_DIR/$SNAPSHOT_NAME/"
+      rsync -a --delete \
+        --exclude '.venv' \
+        --exclude '__pycache__' \
+        --exclude '*.pyc' \
+        --exclude 'node_modules' \
+        --exclude '.DS_Store' \
+        "$SOURCE/" "$LOCAL_BACKUP_DIR/$SNAPSHOT_NAME/"
       
       echo "Syncing to Google Drive..."
-      rclone sync "$LOCAL_BACKUP_DIR" "$RCLONE_REMOTE:$GDRIVE_PATH" -v
+      rclone sync "$LOCAL_BACKUP_DIR" "$RCLONE_REMOTE:$GDRIVE_PATH" -v --fast-list
       
-      echo "Cleaning old backups (keeping last $KEEP_COUNT)..."
+      echo "Cleaning old local backups (keeping last $KEEP_COUNT)..."
       cd "$LOCAL_BACKUP_DIR"
       ls -1t | tail -n +$((KEEP_COUNT + 1)) | xargs -r rm -rf
-      
-      rclone cleanup "$RCLONE_REMOTE:$GDRIVE_PATH" -v
       
       echo "Backup complete!"
     '';
