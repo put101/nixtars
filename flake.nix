@@ -16,6 +16,7 @@
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs-anki.url = "github:nixos/nixpkgs/3cbadb8d8db0495065347b709baab421139bf6f6";
 
     agenix.url = "github:ryantm/agenix";
 

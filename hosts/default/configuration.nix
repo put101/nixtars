@@ -279,19 +279,14 @@ services.deluge = {
 
     gparted
 
-    (pkgs.anki.withAddons [
-      # Specify the anki-connect add-on and provide its configuration
-      (pkgs.ankiAddons.anki-connect.withConfig {
-        # The configuration is passed as an attribute set here
+    # Use older anki version that works with addons
+    (inputs.nixpkgs-anki.legacyPackages.${pkgs.system}.anki.withAddons [
+      (inputs.nixpkgs-anki.legacyPackages.${pkgs.system}.ankiAddons.anki-connect.withConfig {
         config = {
-          # This key is required by the Obsidian plugin
           webCorsOriginList = [
             "http://localhost"
             "app://obsidian.md"
           ];
-          # You can set other AnkiConnect options here if needed,
-          # but the defaults are usually fine.
-          # Example: webBindAddress = "127.0.0.1";
         };
       })
     ])
