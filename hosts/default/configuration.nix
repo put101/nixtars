@@ -12,7 +12,6 @@
     ./hardware-configuration.nix
     ./stylix.nix
     ./agenix.nix
-    ./gdrive-backup.nix
   ];
 
   hardware.bluetooth.enable = true;
@@ -215,7 +214,8 @@ services.deluge = {
     ll = "ls -alF";
     gs = "git status";
     nv = "nvim";
-    build = "sudo nixos-rebuild switch --flake .#nixtars";
+    y = "yazi";
+    build = "sudo darwin-rebuild switch --flake .#nixtars";
   };
 
   # List packages installed in system profile. To search, run:
@@ -243,7 +243,6 @@ services.deluge = {
     xclip
     bat
     unetbootin
-    balena-etcher
     fastfetch
     python3
     uv

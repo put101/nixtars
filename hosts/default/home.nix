@@ -258,6 +258,24 @@ in {
 
   programs.direnv.enable = true;
 
+  programs.tmux = {
+    enable = true;
+    plugins = with pkgs.tmuxPlugins; [
+      resurrect
+      {
+        plugin = continuum;
+        extraConfig = ''
+          set -g @continuum-restore 'on'
+          set -g @continuum-save-interval '15'
+        '';
+      }
+    ];
+    extraConfig = ''
+      set -g @resurrect-capture-pane-contents 'on'
+      set -g @resurrect-strategy-nvim 'session'
+    '';
+  };
+
   home.packages = with pkgs; [
     hello
     direnv
