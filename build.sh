@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-nixos-rebuild switch --flake .#nixtars
+sudo nixos-rebuild switch --flake .#nixtars
 
 if git status --porcelain | grep -q .; then
     git add .

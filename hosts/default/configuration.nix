@@ -215,7 +215,7 @@ services.deluge = {
     gs = "git status";
     nv = "nvim";
     y = "yazi";
-    build = "sudo darwin-rebuild switch --flake .#nixtars";
+    build = "sudo nixos-rebuild switch --flake .#nixtars";
   };
 
   # List packages installed in system profile. To search, run:

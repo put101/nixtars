@@ -218,8 +218,6 @@ in {
     ./waybar/default.nix
     ./pia.nix
     ./custom-neovim.nix
-    ./nvim-kickstart.nix
-    ./nvim-mine-pkg.nix
   ];
 
   xdg.configFile."nvim/after/plugin/spellfix.lua" = {
@@ -299,7 +297,9 @@ in {
     wireguard-tools
     jq
     openresolv
-    #niri>
+    # Neovim Custom Wrappers
+    (import ./nvim-kickstart.nix { inherit pkgs; })
+    (import ./nvim-mine-pkg.nix { inherit pkgs; })
 
     (pkgs.writeShellScriptBin "pia-run" ''
       #!/usr/bin/env bash

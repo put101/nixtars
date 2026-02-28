@@ -3,25 +3,22 @@ let
   neovim-wrapped = pkgs.wrapNeovimUnstable pkgs.neovim-unwrapped {
     wrapperArgs = [
       "--suffix" "PATH" ":" (pkgs.lib.makeBinPath [
+        pkgs.git
         pkgs.gcc
         pkgs.gnumake
         pkgs.unzip
         pkgs.ripgrep
         pkgs.fd
         pkgs.curl
-        pkgs.git
-        
-        # Language Servers
+        pkgs.tree-sitter
         pkgs.lua-language-server
-        pkgs.nil # nix
-        pkgs.pyright # python
-        pkgs.nodePackages.typescript-language-server
-        pkgs.vscode-langservers-extracted # html, css, json
+        pkgs.nil # Nix LSP
+        pkgs.nodejs # for some LSPs
       ])
     ];
   };
 in
-pkgs.runCommand "nvim-mine-pkg" { } ''
+pkgs.runCommand "nvim-kickstart" { } ''
   mkdir -p $out/bin
-  ln -s ${neovim-wrapped}/bin/nvim $out/bin/nvim-mine-pkg
+  ln -s ${neovim-wrapped}/bin/nvim $out/bin/nvim-kickstart
 ''
