@@ -52,13 +52,13 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # SumAstroNvim configuration
-  sumAstroNvim = {
-    username = "tobi";
-    nerdfont = pkgs.nerd-fonts.jetbrains-mono;
-    nodePackage = pkgs.nodejs;
-    pythonPackage = pkgs.python3;
-  };
+  # SumAstroNvim configuration (soft disabled for now)
+  # sumAstroNvim = {
+  #   username = "tobi";
+  #   nerdfont = pkgs.nerd-fonts.jetbrains-mono;
+  #   nodePackage = pkgs.nodejs;
+  #   pythonPackage = pkgs.python3;
+  # };
 
   networking.hostName = "nixtars"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
@@ -200,6 +200,7 @@ services.deluge = {
 
   nixpkgs.overlays = [
     inputs.self.overlays.default
+    inputs.neovim-nightly-overlay.overlays.default
   ];
 
   #nixpkgs.config.cudaSupport = true;
@@ -236,7 +237,8 @@ services.deluge = {
     docker-color-output
     oxker
     vim
-    neovim
+    # neovim (soft disabled for now)
+    inputs.neovim-nightly-overlay.packages.${pkgs.system}.default
     xsel
     vscode
     tealdeer

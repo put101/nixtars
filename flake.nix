@@ -17,6 +17,7 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-anki.url = "github:nixos/nixpkgs/3cbadb8d8db0495065347b709baab421139bf6f6";
+    neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
 
     agenix.url = "github:ryantm/agenix";
 
@@ -147,7 +148,7 @@
           inputs.agenix.nixosModules.default
           ./hosts/default/configuration.nix
           inputs.home-manager.nixosModules.default
-          sum-astro-nvim.nixosModules.astroNvim
+          # sum-astro-nvim.nixosModules.astroNvim (soft disabled for now)
           #inputs.nix-pia-vpn.nixosModules.default
         ];
       };
