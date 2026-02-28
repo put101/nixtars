@@ -258,6 +258,14 @@ require('lazy').setup({
   -- NOTE: Plugins can be added via a link or github org/name. To run setup automatically, use `opts = {}`
   { 'NMAC427/guess-indent.nvim', opts = {} },
 
+  {
+    'psliwka/vim-dirtytalk',
+    build = ':DirtytalkUpdate',
+    config = function()
+      vim.opt.spelllang = { 'en', 'programming' }
+    end,
+  },
+
   -- Alternatively, use `config = function() ... end` for full control over the configuration.
   -- If you prefer to call `setup` explicitly, use:
   --    {
@@ -492,7 +500,6 @@ require('lazy').setup({
         ---@module 'mason.settings'
         ---@type MasonSettings
         ---@diagnostic disable-next-line: missing-fields
-        opts = {},
       },
       -- Maps LSP server names between nvim-lspconfig and Mason package names.
       'mason-org/mason-lspconfig.nvim',
@@ -658,6 +665,8 @@ require('lazy').setup({
         -- You can add other tools here that you want Mason to install
       })
 
+      require('mason').setup()
+      require('mason-lspconfig').setup()
       require('mason-tool-installer').setup { ensure_installed = ensure_installed }
 
       for name, server in pairs(servers) do
