@@ -933,9 +933,8 @@ require('lazy').setup({
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   -- { import = 'custom.plugins' },
   --
-  },
-  lockfile = vim.fn.stdpath 'data' .. '/lazy-lock.json', -- Store lockfile in a writable location
 }, { ---@diagnostic disable-line: missing-fields
+  lockfile = vim.fn.stdpath 'data' .. '/lazy-lock.json', -- Store lockfile in a writable location
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
     -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
