@@ -52,14 +52,6 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
 
-  # SumAstroNvim configuration (soft disabled for now)
-  # sumAstroNvim = {
-  #   username = "tobi";
-  #   nerdfont = pkgs.nerd-fonts.jetbrains-mono;
-  #   nodePackage = pkgs.nodejs;
-  #   pythonPackage = pkgs.python3;
-  # };
-
   networking.hostName = "nixtars"; # Define your hostname.
   # networking.wireless.enable = true;  # Enables wireless support via wpa_supplicant.
 
@@ -237,7 +229,6 @@ services.deluge = {
     docker-color-output
     oxker
     vim
-    # neovim (soft disabled for now)
     inputs.neovim-nightly-overlay.packages.${pkgs.system}.default
     xsel
     vscode
@@ -299,16 +290,6 @@ services.deluge = {
     # screenshot plasma issue -> use https://wiki.nixos.org/wiki/Flameshot
     #grim
 
-    #<datanvim (soft disabled for now)
-    # gcc
-    # gnumake
-    # pkg-config
-    # lua5_1
-    # luarocks
-    # imagemagick
-    # luaPackages.luarocks
-    #datanvim>
-
     zoom-us
     yt-dlp
 
@@ -330,7 +311,7 @@ services.deluge = {
     pciutils
     usbutils
 
-    # Neovim runtime deps (for mason in AstroNvim)
+    # Neovim runtime deps
     unzip
     go
 

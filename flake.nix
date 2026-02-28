@@ -26,12 +26,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-
-
-    #nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    #home-manager.url = "github:nix-community/home-manager";
-    lazyvim.url = "github:pfassina/lazyvim-nix";
-
     ralph-src = {
       url = "github:mikeyobrien/ralph-orchestrator";
       flake = false;
@@ -47,14 +41,7 @@
     #inputs.nixpkgs.follows = "nixpkgs";
     #};
 
-    nvf = {
-      url = "github:notashelf/nvf";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     stylix.url = "github:danth/stylix";
-
-    sum-astro-nvim.url = "github:sum-rock/SumAstroNvim/master";
 
     #niri
     niri-session-manager.url = "github:MTeaHead/niri-session-manager";
@@ -76,11 +63,6 @@
       flake = false;
     };
 
-    kickstart-nvim = {
-      url = "github:nix-community/kickstart-nix.nvim";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
   };
 
   outputs =
@@ -88,11 +70,8 @@
     , nixpkgs
     , home-manager
     , agenix
-    , lazyvim
     , niri-session-manager
     , lmstudio
-    , sum-astro-nvim
-    , kickstart-nvim
     , ...
     }@inputs: {
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixpkgs-fmt;
@@ -148,7 +127,6 @@
           inputs.agenix.nixosModules.default
           ./hosts/default/configuration.nix
           inputs.home-manager.nixosModules.default
-          # sum-astro-nvim.nixosModules.astroNvim (soft disabled for now)
           #inputs.nix-pia-vpn.nixosModules.default
         ];
       };

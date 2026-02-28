@@ -183,9 +183,7 @@ in {
   # Note: this file is deployed via Home Manager to `~/.config/niri/config.kdl`.
   # Changes in `./config.kdl` only take effect after `nixos-rebuild switch` (or `home-manager switch`).
   xdg.configFile."niri/config.kdl".source = lib.mkForce ./config.kdl;
-  xdg.configFile."nvim".source = ./nvim-kickstart;
-  # xdg.configFile."nvim-kickstart".source = ./nvim-kickstart; (soft disabled for now)
-  # xdg.configFile."nvim-mine".source = ./nvim-mine; (soft disabled for now)
+  xdg.configFile."nvim".source = ./nvim-core;
 
   # Link Gruvbox wallpapers from the flake
   home.file."Pictures/Wallpapers/Gruvbox" = {
@@ -218,10 +216,7 @@ in {
     inputs.agenix.homeManagerModules.age
     ./waybar/default.nix
     ./pia.nix
-    # ./custom-neovim.nix (soft disabled for now)
   ];
-
-  # programs.nvf moved to ./nvf.nix
 
   # nemo, udisks, auto-usb detection
   xdg.desktopEntries.nemo = {
@@ -274,9 +269,6 @@ in {
     wireguard-tools
     jq
     openresolv
-    # Neovim Custom Wrappers (soft disabled for now)
-    # (import ./nvim-kickstart.nix { inherit pkgs; })
-    # (import ./nvim-mine-pkg.nix { inherit pkgs; })
 
     (pkgs.writeShellScriptBin "pia-run" ''
       #!/usr/bin/env bash
@@ -306,12 +298,6 @@ in {
 
   home.shellAliases = {
     nv = "${inputs.neovim-nightly-overlay.packages.${pkgs.system}.default}/bin/nvim";
-    
-    # Neovim distributions (each uses isolated config/data) (soft disabled for now)
-    # nvim-astro = "nvim";  # SumAstroNvim (default, managed by home-manager)
-    # nvim-kick = "env NVIM_APPNAME='nvim-kickstart' nvim-kickstart";  # custom kickstart wrapper in repo
-    # nvim-mine = "env NVIM_APPNAME='nvim-mine' nvim-mine-pkg";  # local fork of kickstart-nix.nvim
-    # nvim-custom = "env NVIM_APPNAME='nvim-custom' nvim";  # custom neovim in ~/my-neovim
 
     # PIA VPN Aliases
     pia-ldn = "pia-run PREFERRED_REGION=uk_london ./get_region.sh";
