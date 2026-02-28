@@ -106,37 +106,6 @@
           opencode = final.opencode;
         };
 
-        # Ollama 0.15.x override (nixpkgs may lag behind)
-        ollama =
-          let
-            version = "0.15.2";
-          in
-          prev.ollama.overrideAttrs (old: {
-            inherit version;
-            src = prev.fetchFromGitHub {
-              owner = "ollama";
-              repo = "ollama";
-              tag = "v${version}";
-              hash = "sha256-hfEuVWMmayAO26EV6fu7lRWEL3Es9wyN9sMdm5I+NJE=";
-            };
-            vendorHash = "sha256-WdHAjCD20eLj0d9v1K6VYP8vJ+IZ8BEZ3CciYLLMtxc=";
-          });
-
-        ollama-cuda =
-          let
-            version = "0.15.2";
-          in
-          prev.ollama-cuda.overrideAttrs (old: {
-            inherit version;
-            src = prev.fetchFromGitHub {
-              owner = "ollama";
-              repo = "ollama";
-              tag = "v${version}";
-              hash = "sha256-hfEuVWMmayAO26EV6fu7lRWEL3Es9wyN9sMdm5I+NJE=";
-            };
-            vendorHash = "sha256-WdHAjCD20eLj0d9v1K6VYP8vJ+IZ8BEZ3CciYLLMtxc=";
-          });
-
         # Pin microsoft-edge to version 144 (145 download failing)
         microsoft-edge =
           prev.microsoft-edge.overrideAttrs (old: rec {
