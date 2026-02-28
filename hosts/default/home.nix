@@ -328,7 +328,7 @@ in {
   ];
 
   home.shellAliases = {
-    nv = "nvim";
+    nv = "${inputs.neovim-nightly-overlay.packages.${pkgs.system}.default}/bin/nvim";
     
     # Neovim distributions (each uses isolated config/data) (soft disabled for now)
     # nvim-astro = "nvim";  # SumAstroNvim (default, managed by home-manager)

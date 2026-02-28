@@ -214,7 +214,7 @@ services.deluge = {
   environment.shellAliases = {
     ll = "ls -alF";
     gs = "git status";
-    nv = "nvim";
+    nv = "${inputs.neovim-nightly-overlay.packages.${pkgs.system}.default}/bin/nvim";
     y = "yazi";
     build = "sudo nixos-rebuild switch --flake .#nixtars";
   };
@@ -299,14 +299,14 @@ services.deluge = {
     # screenshot plasma issue -> use https://wiki.nixos.org/wiki/Flameshot
     #grim
 
-    #<datanvim
-    gcc
-    gnumake
-    pkg-config
-    lua5_1
-    luarocks
-    imagemagick
-    luaPackages.luarocks
+    #<datanvim (soft disabled for now)
+    # gcc
+    # gnumake
+    # pkg-config
+    # lua5_1
+    # luarocks
+    # imagemagick
+    # luaPackages.luarocks
     #datanvim>
 
     zoom-us
