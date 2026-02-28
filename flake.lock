@@ -611,17 +611,17 @@
     },
     "nixpkgs-anki": {
       "locked": {
-        "lastModified": 1751274312,
-        "narHash": "sha256-/bVBlRpECLVzjV19t5KMdMFWSwKLtb5RyXdjz3LJT+g=",
+        "lastModified": 1771804684,
+        "narHash": "sha256-jB3cNIKVy+VUAR2R0HEPS+ipzPRlpGqQhXrhkXp5vgk=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "50ab793786d9de88ee30ec4e4c24fb4236fc2674",
+        "rev": "3cbadb8d8db0495065347b709baab421139bf6f6",
         "type": "github"
       },
       "original": {
         "owner": "nixos",
-        "ref": "nixos-24.11",
         "repo": "nixpkgs",
+        "rev": "3cbadb8d8db0495065347b709baab421139bf6f6",
         "type": "github"
       }
     },
