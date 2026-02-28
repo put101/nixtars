@@ -73,6 +73,16 @@ in {
   # release notes.
   home.stateVersion = "25.11"; # Please read the comment before changing.
 
+  # Set default audio sink to LG Ultrawide HDMI (HDMI 1)
+  home.activation.setDefaultAudioSink = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    sleep 1
+    # Wait for pipewire and set HDMI as default sink if not already set
+    currentSink=$(pactl get-default-sink 2>/dev/null || true)
+    if [ "$currentSink" != "alsa_output.pci-0000_2d_00.1.pro-output-7" ]; then
+      pactl set-default-sink "alsa_output.pci-0000_2d_00.1.pro-output-7" 2>/dev/null || true
+    fi
+  '';
+
   # The home.packages option allows you to install Nix packages into your
   # environment.
   #home.packages = [
@@ -259,6 +269,9 @@ in {
     git-lfs
     git-credential-manager
     python3Packages.huggingface-hub
+    pulseaudio
+    nwg-look
+    wlsunset
     # pkgs.ralph-wiggum # Removed temporarily as it's causing build issues
     #<niri
     wpaperd
