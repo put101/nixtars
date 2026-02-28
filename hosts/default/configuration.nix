@@ -314,6 +314,8 @@ services.deluge = {
     # Neovim runtime deps
     unzip
     go
+    gcc
+    gnumake
 
     localsend
   ];
