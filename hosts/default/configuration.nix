@@ -332,11 +332,6 @@ services.deluge = {
     unzip
     go
 
-    # kickstart-nix.nvim - wrapped as nvim-kick command
-    (pkgs.writeShellScriptBin "nvim-kick" ''
-      exec ${inputs.kickstart-nvim.packages.${pkgs.system}.default}/bin/nvim "$@"
-    '')
-
     localsend
   ];
 

@@ -178,10 +178,12 @@ in {
   #  localNetworkGameTransfers.openFirewall = true; # Open ports in the firewall for Steam Local Network Game Transfers
   #
 
+  # Neovim distributions (each uses isolated config/data)
   # niri
   # Note: this file is deployed via Home Manager to `~/.config/niri/config.kdl`.
   # Changes in `./config.kdl` only take effect after `nixos-rebuild switch` (or `home-manager switch`).
   xdg.configFile."niri/config.kdl".source = lib.mkForce ./config.kdl;
+  xdg.configFile."nvim-kickstart".source = ./nvim-kickstart;
 
   # Link Gruvbox wallpapers from the flake
   home.file."Pictures/Wallpapers/Gruvbox" = {
@@ -327,7 +329,7 @@ in {
     
     # Neovim distributions (each uses isolated config/data)
     nvim-astro = "nvim";  # SumAstroNvim (default, managed by home-manager)
-    nvim-kick = "nvim-kick";  # kickstart-nix.nvim (nix-managed plugins)
+    nvim-kick = "env NVIM_APPNAME='nvim-kickstart' nvim";  # custom kickstart in repo
     nvim-custom = "env NVIM_APPNAME='nvim-custom' nvim";  # custom neovim in ~/my-neovim
 
     # PIA VPN Aliases
