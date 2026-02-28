@@ -220,6 +220,7 @@ services.deluge = {
     age
     wget
     jq
+    ripgrep
     lsof
     tree
     gh
