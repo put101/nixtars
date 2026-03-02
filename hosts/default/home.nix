@@ -45,6 +45,14 @@ in {
     fi
   '';
 
+  # Install uv tools from pyproject.toml
+  home.activation.installUvTools = lib.hm.dag.entryAfter ["writeBoundary"] ''
+    TOOL_TOML="${config.home.homeDirectory}/nixtars/python-tools/pyproject.toml"
+    if [ -f "$TOOL_TOML" ]; then
+      uv tool install --file "$TOOL_TOML" 2>/dev/null || true
+    fi
+  '';
+
   # agenix secrets (optional until you create `secrets/*.age`).
   # We guard with `pathExists` so evaluation doesn't fail before the files exist.
   age.secrets = let
@@ -112,16 +120,23 @@ in {
   home.file = {
     ".gtkrc-2.0".enable = false;
 
-    # # Building this configuration will create a copy of 'dotfiles/screenrc' in
-    # # the Nix store. Activating the configuration will then make '~/.screenrc' a
-    # # symlink to the Nix store copy.
-    # ".screenrc".source = dotfiles/screenrc;
+    # nix config to include access-tokens from nix-auth
+    ".config/nix/nix.conf".text = ''
+      !include access-tokens.conf
+    '';
 
-    # # You can also set the file content immediately.
-    # ".gradle/gradle.properties".text = ''
-    #   org.gradle.console=verbose
-    #   org.gradle.daemon.idletimeout=3600000
-    # '';
+    # uv tools from pyproject.toml
+    "python-tools/pyproject.toml".text = ''
+      [project]
+      name = "nixtars-tools"
+      version = "0.1.0"
+      dependencies = [
+          "pix2text",
+      ]
+
+      [tool.uv]
+      tools = true
+    '';
   };
 
   # Home Manager can also manage your environment variables through
@@ -347,7 +362,7 @@ in {
       # Cursor animation - smooth cursor movement
       cursor-style = "bar";
       cursor-style-blink = true;
-      cursor-blink-interval = 500;
+      cursor-blink-rate = 500;
       
       # Cursor trail effect shader
       custom-shader = "/home/tobi/.config/ghostty/shaders/cursor_tail.glsl";

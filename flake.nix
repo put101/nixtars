@@ -1,6 +1,8 @@
 {
   description = "Nixos config flake";
   nixConfig = {
+    # nix-auth manages tokens in ~/.config/nix/access-tokens.conf
+    # Run 'nix-auth login github' after rebuild to authenticate
     extra-substituters = [
       "https://cache.nixos.org"
       "https://nix-community.cachix.org"
@@ -86,6 +88,29 @@
           opencode = final.opencode;
         };
 
+        # Upgrade ollama to v0.17.4 using nixpkgs as base
+        # Both ollama (CPU) and ollama-cuda (GPU) are overridden
+        ollama = prev.ollama.overrideAttrs (old: rec {
+          version = "0.17.4";
+          src = prev.fetchFromGitHub {
+            owner = "ollama";
+            repo = "ollama";
+            tag = "v${version}";
+            hash = "sha256-9yJ8Jbgrgiz/Pr6Se398DLkk1U2Lf5DDUi+tpEIjAaI=";
+          };
+          vendorHash = "sha256-Lc1Ktdqtv2VhJQssk8K1UOimeEjVNvDWePE9WkamCos=";
+        });
+        ollama-cuda = prev.ollama-cuda.overrideAttrs (old: rec {
+          version = "0.17.4";
+          src = prev.fetchFromGitHub {
+            owner = "ollama";
+            repo = "ollama";
+            tag = "v${version}";
+            hash = "sha256-9yJ8Jbgrgiz/Pr6Se398DLkk1U2Lf5DDUi+tpEIjAaI=";
+          };
+          vendorHash = "sha256-Lc1Ktdqtv2VhJQssk8K1UOimeEjVNvDWePE9WkamCos=";
+        });
+
         # Pin microsoft-edge to version 144 (145 download failing)
         microsoft-edge =
           prev.microsoft-edge.overrideAttrs (old: rec {
@@ -114,6 +139,7 @@
               outputHash = "sha256-tPDRjMcfGWC7TJaQHa3mt7PsZ6Gr5l4lMUOSXoozqoU=";
             });
           });
+
       };
 
       # use "nixos", or your hostname as the name of the configuration

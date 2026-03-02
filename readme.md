@@ -174,3 +174,31 @@ Build failing with 404 errors when fetching `sum-astro-nvim` and missing attribu
 
 ### Verification
 `sudo nixos-rebuild switch --flake .#nixtars` completed successfully.
+
+
+
+
+# ollama
+- to get a hash of something: https://github.com/ollama/ollama/releases/tag/v0.17.4 
+- the following is for the last in the list i.e `Source code (tar.gz)` link in the Assets of that release.
+- `nix-prefetch-url --type sha256 https://github.com/ollama/ollama/archive/refs/tags/v0.17.4.tar.gz `
+
+- idk...: `nixos-rebuild dry-activate --flake .#nixtars 2>&1`
+
+- DEFAULT MODELS DIR: https://www.reddit.com/r/ollama/comments/1c4zg15/does_anyone_know_how_to_change_where_your_models/
+
+- `export OLLAMA_MODELS=/your/desired/path`
+
+# rclone 
+
+To avoid downloading GDrive listing:
+# This scans entire GDrive (bad)
+`rclone copy folder gdrive:`
+# This only touches the specific folder (good)
+`rclone copy folder gdrive:Backups/Captures`
+
+# Add --no-traverse to skip checking remote entirely (faster, safe)
+`rclone copy --no-traverse folder gdrive:Backups/Captures`
+
+The key is always specifying the remote path (`gdrive:Folder/`), never just `gdrive:.`
+
