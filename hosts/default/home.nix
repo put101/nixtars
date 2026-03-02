@@ -210,11 +210,17 @@ in {
   xdg.configFile."niri/config.kdl".source = lib.mkForce ./config.kdl;
   xdg.configFile."nvim".source = ./nvim-core;
 
-  # Link Gruvbox wallpapers from the flake
+  # Link theme wallpapers from the flake
   home.file."Pictures/Wallpapers/Gruvbox" = {
     source = inputs.gruvbox-wallpapers.packages.${pkgs.system}.default;
     recursive = true;
   };
+
+  # Copy theme files for runtime application (TODO: add back after fixing path)
+  # home.file."nixtars/themes" = {
+  #   source = ./themes;
+  #   recursive = true;
+  # };
 
   xdg.configFile."wpaperd/wallpaper.toml".text = ''
     [default]

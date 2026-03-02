@@ -1,13 +1,35 @@
-{ pkgs, inputs, ... }: {
+{ pkgs, inputs, config, lib, ... }:
+
+let
+  # CHANGE THIS to switch themes: "gruvbox", "nord", or "catppuccin"
+  selectedTheme = "gruvbox";
+
+  themeScheme = {
+    gruvbox = "${pkgs.base16-schemes}/share/themes/gruvbox-dark-medium.yaml";
+    nord = "${pkgs.base16-schemes}/share/themes/nord.yaml";
+    catppuccin = "${pkgs.base16-schemes}/share/themes/catppuccin-mocha.yaml";
+  };
+
+  themeColors = {
+    gruvbox = {
+      swaylock = "1d2021";
+    };
+    nord = {
+      swaylock = "2e3440";
+    };
+    catppuccin = {
+      swaylock = "1e1e2e";
+    };
+  };
+in
+{
   imports = [ inputs.stylix.nixosModules.stylix ];
 
-  stylix = {
+  config.stylix = {
     enable = true;
-    base16Scheme = "${pkgs.base16-schemes}/share/themes/gruvbox-dark-medium.yaml";
+    base16Scheme = lib.mkDefault (themeScheme.${selectedTheme} or themeScheme.gruvbox);
     image = ../../wallpapers/forest.png;
     polarity = "dark";
-
-
 
     cursor = {
       package = pkgs.bibata-cursors;
@@ -36,7 +58,6 @@
       };
     };
 
-    # Transparency/Opacity settings
     opacity = {
       applications = 1.0;
       terminal = 0.9;
