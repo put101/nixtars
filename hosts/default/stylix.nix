@@ -2,7 +2,7 @@
 
 let
   # CHANGE THIS to switch themes: "gruvbox", "nord", or "catppuccin"
-  selectedTheme = "gruvbox";
+  selectedTheme = "catppuccin";
 
   themeScheme = {
     gruvbox = "${pkgs.base16-schemes}/share/themes/gruvbox-dark-medium.yaml";
