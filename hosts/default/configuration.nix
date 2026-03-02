@@ -219,6 +219,8 @@ services.deluge = {
     xdg-desktop-portal-wlr
     xdg-desktop-portal-gtk
     rclone
+    typst
+    typst-live
     ripgrep
     lsof
     tree
