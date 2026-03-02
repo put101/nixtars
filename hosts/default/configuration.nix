@@ -215,6 +215,9 @@ services.deluge = {
     age
     wget
     jq
+    # xdg-desktop-portal for Niri/Wayland - fixes browser session persistence
+    xdg-desktop-portal-wlr
+    xdg-desktop-portal-gtk
     ripgrep
     lsof
     tree
@@ -236,7 +239,11 @@ services.deluge = {
     python3
     uv
     microsoft-edge
-    brave
+    # brave with sandbox disabled to fix session persistence issue on NixOS
+    (writeShellScriptBin "brave" ''
+      exec ${pkgs.brave}/bin/brave --no-sandbox --disable-seccomp "$@"
+    '')
+    # nix-auth: run 'nix run github:numtide/nix-auth -- login github' after rebuild
     signal-desktop
     #jetbrains.pycharm-professional
     obsidian
@@ -318,9 +325,7 @@ services.deluge = {
 
   services.ollama = {
     enable = true;
-    # acceleration = "cuda"; # REMOVED: Deprecated option
-    package = pkgs.ollama-cuda; # ADDED: New method for GPU support
-    # Optional: preload models, see https://ollama.com/library
+    package = pkgs.ollama-cuda;
     loadModels = ["deepseek-r1:1.5b"];
   };
 
