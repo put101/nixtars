@@ -1,0 +1,9 @@
+[project]
+name = "nixtars-tools"
+version = "0.1.0"
+dependencies = [
+    "pix2text",
+]
+
+[tool.uv]
+tools = true
