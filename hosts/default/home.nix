@@ -368,7 +368,7 @@ in {
       # Cursor animation - smooth cursor movement
       cursor-style = "bar";
       cursor-style-blink = true;
-      cursor-blink-rate = 500;
+      #cursor-blink-rate = 500;
       
       # Cursor trail effect shader
       custom-shader = "/home/tobi/.config/ghostty/shaders/cursor_tail.glsl";
