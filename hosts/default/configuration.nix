@@ -218,6 +218,7 @@ services.deluge = {
     # xdg-desktop-portal for Niri/Wayland - fixes browser session persistence
     xdg-desktop-portal-wlr
     xdg-desktop-portal-gtk
+    rclone
     ripgrep
     lsof
     tree
