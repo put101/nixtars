@@ -1,19 +1,19 @@
 /* 
- * Gruvbox Dark Palette 
+ * Catppuccin Mocha Palette 
  */
 
-@define-color bg      #282828;
-@define-color bg1     #3c3836;
-@define-color fg      #ebdbb2;
+@define-color bg      #1e1e2e;
+@define-color bg1     #313244;
+@define-color fg      #cdd6f4;
 
-@define-color red     #cc241d;
-@define-color green   #98971a;
-@define-color yellow  #d79921;
-@define-color blue    #458588;
-@define-color purple  #b16286;
-@define-color aqua    #689d6a;
-@define-color orange  #d65d0e;
-@define-color gray    #a89984;
+@define-color red     #f38ba8;
+@define-color green   #a6e3a1;
+@define-color yellow  #f9e2af;
+@define-color blue    #89b4fa;
+@define-color purple  #cba6f7;
+@define-color aqua    #94e2d5;
+@define-color orange  #fab387;
+@define-color gray    #6c7086;
 
 * {
     font-family: "JetBrainsMono Nerd Font", Roboto, Helvetica, Arial, sans-serif;
@@ -61,17 +61,17 @@ window#waybar.hidden {
 #scratchpad,
 #mpd {
     padding: 0 10px;
-    background-color: @bg1; /* Darker box background */
+    background-color: @bg1;
     color: @fg;
-    border-radius: 4px; /* Gruvbox often uses slightly squarer corners */
+    border-radius: 8px;
     margin-top: 5px;
     margin-bottom: 5px;
     margin-left: 4px;
     margin-right: 4px;
-    border: 2px solid @bg1; /* Slight border */
+    border: 2px solid @bg1;
 }
 
-/* Specific Module Colors (Gruvbox Theme) */
+/* Specific Module Colors (Catppuccin Theme) */
 
 #workspaces {
     background-color: @bg;
@@ -91,12 +91,12 @@ window#waybar.hidden {
 
 #workspaces button.active {
     background-color: @bg1;
-    color: @orange; /* Orange for active workspace */
+    color: @blue;
 }
 
 #workspaces button.focused {
     background-color: @bg1;
-    color: @orange;
+    color: @blue;
 }
 
 #window {

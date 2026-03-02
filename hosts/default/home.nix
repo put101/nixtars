@@ -234,7 +234,7 @@ in {
     settings = {
       image = lib.mkForce "${config.home.homeDirectory}/nixtars/wallpapers/forest.png";
       scaling = lib.mkForce "fit";
-      color = lib.mkForce "1d2021";
+      color = lib.mkForce "1e1e2e";
       indicator-radius = lib.mkForce 100;
       indicator-thickness = lib.mkForce 10;
     };
