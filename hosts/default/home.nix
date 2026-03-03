@@ -261,7 +261,7 @@ in {
     icon = "brave";
     terminal = false;
     categories = [ "Network" "WebBrowser" ];
-    mimeTypes = [ "text/html" "application/x-extension-htm" "application/x-extension-html" "application/x-extension-shtml" "application/xhtml+xml" "application/x-extension-xhtml" "application/x-extension-xht" ];
+    mimeType = [ "text/html" "application/x-extension-htm" "application/x-extension-html" "application/x-extension-shtml" "application/xhtml+xml" "application/x-extension-xhtml" "application/x-extension-xht" ];
   };
   xdg.mimeApps = {
     enable = true;
