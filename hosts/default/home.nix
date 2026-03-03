@@ -254,6 +254,15 @@ in {
     name = "Nemo";
     exec = "${pkgs.nemo-with-extensions}/bin/nemo";
   };
+
+  xdg.desktopEntries.brave = {
+    name = "Brave";
+    exec = "brave %U";
+    icon = "brave";
+    terminal = false;
+    categories = [ "Network" "WebBrowser" ];
+    mimeTypes = [ "text/html" "application/x-extension-htm" "application/x-extension-html" "application/x-extension-shtml" "application/xhtml+xml" "application/x-extension-xhtml" "application/x-extension-xht" ];
+  };
   xdg.mimeApps = {
     enable = true;
     defaultApplications = {
